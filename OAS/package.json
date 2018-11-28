@@ -1,0 +1,14 @@
+{
+  "name": "swaggertographql",
+  "version": "1.0.0",
+  "description": "Swagger to GraphQL",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Touran Weda",
+  "license": "MIT",
+  "dependencies": {
+    "oasgraph-cli": "^0.2.0"
+  }
+}
