@@ -1,6 +1,16 @@
+require('axios-debug-log');
+var FormData = require('form-data');
+const objectToFormData = require('object-to-formdata')
 const axios = require('axios');
 
-const {GraphQLBoolean, GraphQLObjectType, GraphQLString, GraphQLList, GraphQLSchema, GraphQLInt } = require('graphql');
+const {GraphQLBoolean, GraphQLObjectType, GraphQLInputObjectType, GraphQLString, GraphQLList, GraphQLSchema, GraphQLInt } = require('graphql');
+
+
+
+function serialize( obj ) {
+  return Object.keys(obj).reduce(function(a,k){a.push(k+'='+encodeURIComponent(obj[k]));return a},[]).join('&')
+}
+
 
 //Booking Type
 const BookingType = new GraphQLObjectType({
@@ -14,6 +24,86 @@ const BookingType = new GraphQLObjectType({
     })
 });
 
+//enquiry Type
+const EnquiryType = new GraphQLObjectType({
+    name: 'EnquiryType',
+    fields: () => ({
+        EnquiryId: { type: GraphQLString},
+        SiteId: { type: GraphQLString },
+        FirstName: { type: GraphQLString },
+        LastName: { type: GraphQLString },
+        Telephone: { type: GraphQLString },
+        Email: { type: GraphQLString },
+        EnquiryType: { type: GraphQLString },
+        Notes: { type: GraphQLString },
+        OptIn: { type: GraphQLBoolean},
+        Over18: { type: GraphQLBoolean}
+    })
+});
+
+//Booking Type
+const NewEnquiryInputType = new GraphQLInputObjectType({
+    name: 'NewEnquiryInput',
+    fields: () => ({
+        SiteId: { type: GraphQLString },
+        FirstName: { type: GraphQLString },
+        LastName: { type: GraphQLString },
+        Telephone: { type: GraphQLString },        
+        Email: { type: GraphQLString },
+        EnquiryType: { type: GraphQLString },
+        Notes: { type: GraphQLString }
+    })
+});
+
+var MutationType = new GraphQLObjectType({
+    name: 'createEnquiry',
+    description: 'createenquiry',
+    fields: () => ({
+        createEnquiry: {
+        type: EnquiryType,
+        description: 'Create an enquiry.',
+        args: {
+        enquiry: { type: NewEnquiryInputType }
+        },
+        resolve: (value, { enquiry }) => {
+            //console.log(enquiry);
+            //console.log(enquiry.SiteId);
+            //formData = getFormData(enquiry);
+            //var formData = new FormData();
+            //formData.append('SiteId=d851caae-6f28-8b8d-e211-015f12033cce', enquiry.SiteId);
+            //formData.append('SiteId', enquiry.SiteId);
+            //formData.append('FirstName', enquiry.FirstName);
+            //formData.append('LastName', enquiry.LastName);
+            //formData.append('Email', enquiry.Email);
+            //formData.append('Telephone', enquiry.Telephone);
+            //formData.append('EnquiryType', enquiry.EnquiryType);
+            //formData.append('Notes', enquiry.Notes);
+            //console.log(formData);
+            var poster = axios({
+                method: 'post',
+                url: 'http://centrenet.powerleague.com/cgi-bin/ext/WebService/Enquiry',
+               //data: "SiteId=d851caae-6f28-8b8d-e211-015f12033cce&FirstName=stephen&LastName=west&Email=test@test.com&Telephone=011111&EnquiryType=test&Notes=test",
+               data: serialize(enquiry),
+                config: {
+                    headers: {'Content-Type': 'application/x-www-form-urlencoded'
+                    }
+                }
+            })
+            
+            .then(res => res.data)
+            .catch(function (response) {
+                //handle error
+                console.log(response);
+            });
+            //console.log(poster);
+            //return axios.post('http://centrenet.powerleague.com/cgi-bin/ext/WebService/Enquiry', {enquiry})
+            // .then(res => res.data);
+            return poster;
+        }
+        }
+    }),
+});
+
 
 //Root Query
 const RootQuery = new GraphQLObjectType({
@@ -22,22 +112,26 @@ const RootQuery = new GraphQLObjectType({
         Bookings: {
             type: new GraphQLList(BookingType),
             resolve(parent, args) {
-                return axios.get('http://centrenet.powerleague.com/cgi-bin/ext/WebService/Booking')
-                .then(res => res.data);
-            }
+            return axios.get('http://centrenet.powerleague.com/cgi-bin/ext/WebService/Booking')
+            .then(res => res.data);
+        }
+    },
+    Booking: {
+        type: BookingType,
+        args: {
+            BookingId: {type: GraphQLString}
         },
-        Booking: {
-                type: BookingType,
-                args: {
-                        BookingId: {type: GraphQLString}
-                },
-                resolve(parent, args) {
-                        return axios.get(`http://centrenet.powerleague.com/cgi-bin/ext/WebService/Booking/${args.BookingId}`)
-                        .then(res => res.data);
-                }
-}
-}
+        resolve(parent, args) {
+        return axios.get(`http://centrenet.powerleague.com/cgi-bin/ext/WebService/Booking/${args.BookingId}`)
+            .then(res => res.data);
+        },
+
+    }
+    }
 });
+
+
 module.exports = new GraphQLSchema({
-    query: RootQuery
+    query: RootQuery,
+    mutation: MutationType
 });
