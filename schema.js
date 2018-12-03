@@ -1,6 +1,4 @@
 require('axios-debug-log');
-var FormData = require('form-data');
-const objectToFormData = require('object-to-formdata')
 const axios = require('axios');
 
 const {GraphQLBoolean, GraphQLObjectType, GraphQLInputObjectType, GraphQLString, GraphQLList, GraphQLSchema, GraphQLInt } = require('graphql');
