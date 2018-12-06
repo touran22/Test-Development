@@ -50,8 +50,7 @@ const AddressType = new GraphQLObjectType({
         IsValidated: { type: GraphQLBoolean },
         DateCreated: { type: GraphQLString },
         LastModified: { type: GraphQLString },
-        CountryName: { type: GraphQLString },
-        OpeningTime: {type: OpeningTimeType}
+        CountryName: { type: GraphQLString }
     })
 });
 
@@ -209,19 +208,7 @@ var MutationType = new GraphQLObjectType({
         enquiry: { type: NewEnquiryInputType }
         },
         resolve: (value, { enquiry }) => {
-            //console.log(enquiry);
-            //console.log(enquiry.SiteId);
-            //formData = getFormData(enquiry);
-            //var formData = new FormData();
-            //formData.append('SiteId=d851caae-6f28-8b8d-e211-015f12033cce', enquiry.SiteId);
-            //formData.append('SiteId', enquiry.SiteId);
-            //formData.append('FirstName', enquiry.FirstName);
-            //formData.append('LastName', enquiry.LastName);
-            //formData.append('Email', enquiry.Email);
-            //formData.append('Telephone', enquiry.Telephone);
-            //formData.append('EnquiryType', enquiry.EnquiryType);
-            //formData.append('Notes', enquiry.Notes);
-            //console.log(formData);
+
             var poster = axios({
                 method: 'post',
                 url: 'http://centrenet.powerleague.com/cgi-bin/ext/WebService/Enquiry',
@@ -259,13 +246,14 @@ const RootQuery = new GraphQLObjectType({
             .then(res => res.data);
         }
     },
-    Bookings: {
+    AccountBookings: {
         type: new GraphQLList(BookingType),
         resolve(parent, args) {
-        return axios.get('http://centrenet.powerleague.com/cgi-bin/ext/WebService/Booking')
+        return axios.get(`http://centrenet.powerleague.com/cgi-bin/ext/WebService/Booking/${args.AccountRef}`)
         .then(res => res.data);
     }
 },
+
 Booking: {
     type: BookingType,
     args: {
@@ -273,13 +261,33 @@ Booking: {
     },
     resolve(parent, args) {
         return axios.get(`http://centrenet.powerleague.com/cgi-bin/ext/WebService/Booking/${args.BookingId}`)
+        .then(res => res.data);
+    },
+
+},
+SiteBookings: {
+    type: BookingType,
+    args: {
+        SiteId: {type: GraphQLString}
+    },
+    resolve(parent, args) {
+        return axios.get(`http://centrenet.powerleague.com/cgi-bin/ext/WebService/Site/${args.SiteId}/Booking`)
+            .then(res => res.data);
+        },
+
+    },
+    Sites: {
+        type: new GraphQLList(SiteType),
+        resolve(parent) {
+            return axios.get('http://centrenet.powerleague.com/cgi-bin/ext/WebService/Site')
             .then(res => res.data);
         },
 
     }
-    }
-});
 
+    }
+
+});
 
 module.exports = new GraphQLSchema({
     query: RootQuery,
