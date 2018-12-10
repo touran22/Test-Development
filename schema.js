@@ -1,9 +1,9 @@
 require('axios-debug-log');
 const axios = require('axios');
 
-const {GraphQLBoolean, GraphQLObjectType, GraphQLInputObjectType, GraphQLString, GraphQLList, GraphQLSchema, GraphQLInt } = require('graphql');
+const {GraphQLBoolean, GraphQLObjectType, GraphQLInputObjectType, GraphQLString, GraphQLList, GraphQLSchema, GraphQLInt, GraphQLFloat } = require('graphql');
 
-
+const baseUrl = 'http://centrenet.powerleague.com/cgi-bin/ext/WebService';
 
 function serialize( obj ) {
     return Object.keys(obj).reduce(function(a,k){a.push(k+'='+encodeURIComponent(obj[k]));return a},[]).join('&')
@@ -51,6 +51,13 @@ const AddressType = new GraphQLObjectType({
         DateCreated: { type: GraphQLString },
         LastModified: { type: GraphQLString },
         CountryName: { type: GraphQLString }
+    })
+});
+
+const AuthTokenType = new GraphQLObjectType({
+    name: 'AuthTokenType',
+    fields: () => ({
+        AuthToken: { type: GraphQLString },
     })
 });
 
@@ -166,7 +173,6 @@ const OnlineUserType = new GraphQLObjectType({
     })
 });
 
-//Site Type
 const SiteType = new GraphQLObjectType({
     name: 'SiteType',
     fields: () => ({
@@ -183,7 +189,53 @@ const SiteType = new GraphQLObjectType({
     })
 });
 
-//Booking Type
+
+const TransactionType = new GraphQLObjectType({
+    name: 'TransactionType',
+    fields: () => ({
+        SLTransactionId: { type: GraphQLString },
+        TransactionDate: { type: GraphQLString },
+        TransactionRef: { type: GraphQLString },
+        AccountRef: { type: GraphQLString },
+        AccountName: { type: GraphQLString },
+        GoodsTotal: { type: GraphQLFloat },
+        VatTotal: { type: GraphQLFloat },
+        Payments: { type: GraphQLFloat },
+        Discount: { type: GraphQLString },
+        Balance: { type: GraphQLFloat }
+    })
+});
+
+
+const NewAccountInputType = new GraphQLInputObjectType({
+    name: 'NewAccountInputType',
+    fields: () => ({
+        OnlineId: { type: GraphQLString },
+        SiteId: { type: GraphQLString },
+        FirstName: { type: GraphQLString },
+        LastName: { type: GraphQLString },
+        DoB: { type: GraphQLString },
+        Email: { type: GraphQLString },
+        Telephone: { type: GraphQLString },        
+        Mobile: { type: GraphQLString },        
+        Address1: { type: GraphQLString },        
+        Address2: { type: GraphQLString },        
+        CityTown: { type: GraphQLString },        
+        County: { type: GraphQLString },        
+        County: { type: GraphQLString },        
+        PostCode: { type: GraphQLString },
+        OptIn: { type: GraphQLBoolean }
+    })
+});
+
+const NewCredentialsInputType = new GraphQLInputObjectType({
+    name: 'NewCredentialsInputType',
+    fields: () => ({
+        userId: { type: GraphQLString },
+        password: { type: GraphQLString }
+    })
+}); 
+
 const NewEnquiryInputType = new GraphQLInputObjectType({
     name: 'NewEnquiryInput',
     fields: () => ({
@@ -195,12 +247,40 @@ const NewEnquiryInputType = new GraphQLInputObjectType({
         EnquiryType: { type: GraphQLString },
         Notes: { type: GraphQLString }
     })
+});       
+
+const NewBookingPaymentInputType = new GraphQLInputObjectType({
+    name: 'NewBookingPaymentInputType',
+    fields: () => ({
+        bookingId: { type: GraphQLString },
+        amount: { type: GraphQLString },
+        paymentRef: { type: GraphQLString }
+    })
 });
 
-var MutationType = new GraphQLObjectType({
-    name: 'createEnquiry',
-    description: 'createenquiry',
+const NewPaymentInputType = new GraphQLInputObjectType({
+    name: 'NewPaymentInputType',
     fields: () => ({
+        SLTransactionId: { type: GraphQLString },
+        amount: { type: GraphQLString },
+        paymentRef: { type: GraphQLString }
+    })
+});
+
+const NewTimeSlotInputType = new GraphQLInputObjectType({
+    name: 'NewTimeSlotInputType',
+    fields: () => ({
+        timeSlotId: { type: GraphQLString },
+        accountRef: { type: GraphQLString },
+        memberNum: { type: GraphQLString },
+        bookingType: { type: GraphQLString }
+    })
+});  
+
+var MutationType = new GraphQLObjectType({
+    name: 'mutations',
+    fields: () => ({
+
         createEnquiry: {
         type: EnquiryType,
         description: 'Create an enquiry.',
@@ -211,8 +291,7 @@ var MutationType = new GraphQLObjectType({
 
             var poster = axios({
                 method: 'post',
-                url: 'http://centrenet.powerleague.com/cgi-bin/ext/WebService/Enquiry',
-                //data: "SiteId=d851caae-6f28-8b8d-e211-015f12033cce&FirstName=stephen&LastName=west&Email=test@test.com&Telephone=011111&EnquiryType=test&Notes=test",
+                url: baseUrl + '/Enquiry',
                 data: serialize(enquiry),
                 config: {
                     headers: {'Content-Type': 'application/x-www-form-urlencoded'
@@ -225,14 +304,173 @@ var MutationType = new GraphQLObjectType({
                 //handle error
                 console.log(response);
             });
-            //console.log(poster);
-            //return axios.post('http://centrenet.powerleague.com/cgi-bin/ext/WebService/Enquiry', {enquiry})
-            // .then(res => res.data);
+
+            return poster;
+        }
+
+        },
+        createAccount: {
+            type: AccountType,
+            description: 'Create an account.',
+            args: {
+                account: { type: NewAccountInputType }
+            },
+            resolve: (value, { account }) => {
+
+                var poster = axios({
+                    method: 'post',
+                    url: baseUrl + '/Account',
+                    data: serialize(account),
+                    config: {
+                        headers: {'Content-Type': 'application/x-www-form-urlencoded'
+                        }
+                    }
+                })
+
+                .then(res => res.data)
+                .catch(function (response) {
+                    //handle error
+                    console.log(response);
+                });
+
+                return poster;
+            }
+        },
+        authenticateUser: {
+            type: TransactionType,
+            description: 'Authenticate a user.',
+            args: {
+                credentials: { type: NewCredentialsInputType }
+            },
+            resolve: (value, { credentials }) => {
+
+                var poster = axios({
+                    method: 'get',
+                    url: baseUrl + `/Authenticate/${args.credentials.userId}`,
+                    data: serialize(credentials.password),
+                    config: {
+                        headers: {'Content-Type': 'application/x-www-form-urlencoded'
+                        }
+                    }
+            })
+            .then(res => res.data)
+            .catch(function (response) {
+                //handle error
+                console.log(response);
+            });
+
+            return poster;
+        }
+        },
+
+        deleteBooking: {
+            type: BookingType,
+            description: 'Delete a booking',
+            args: {
+                bookingId: { type: GraphQLString }
+            },
+            resolve: (value, { account, accountRef }) => {
+
+                var poster = axios({
+                    method: 'delete',
+                    url: baseUrl + `/Booking/${args.bookingId}`,
+                    config: {
+                        headers: {'Content-Type': 'application/x-www-form-urlencoded'
+                        }
+                    }
+            })
+            .then(res => res.data)
+            .catch(function (response) {
+                //handle error
+                console.log(response);
+            });
+
+            return poster;
+        }
+        },
+
+
+        deleteParty: {
+            type: GraphQLObjectType,
+            description: 'Delete a Bubble Party',
+            args: {
+                bookingId: { type: GraphQLString }
+            },
+            resolve: (value, { account, accountRef }) => {
+
+                var poster = axios({
+                    method: 'delete',
+                    url: baseUrl + `/BubbleParty/${args.bookingId}`,
+                    config: {
+                        headers: {'Content-Type': 'application/x-www-form-urlencoded'
+                        }
+                    }
+            })
+            .then(res => res.data)
+            .catch(function (response) {
+                //handle error
+                console.log(response);
+            });
+
+            return poster;
+        }
+        },
+        processBookingPayment: {
+            type: BookingType,
+            description: 'Delete a booking',
+            args: {
+                payment: { type: NewBookingPaymentInputType }
+            },
+            resolve: (value, { payment }) => {
+
+                var poster = axios({
+                    method: 'post',
+                    url: baseUrl + `/Booking/${args.payment.bookingId}/Payment`,
+                    config: {
+                        headers: {'Content-Type': 'application/x-www-form-urlencoded'
+                        }
+                    }
+            })
+            .then(res => res.data)
+            .catch(function (response) {
+                //handle error
+                console.log(response);
+            });
+
+            return poster;
+        }
+        },
+
+        processAccountPayment: {
+            type: TransactionType,
+            description: 'Process an account payment.',
+            args: {
+                accountRef: {type: GraphQLString },
+                payment: { type: NewAccountInputType }
+            },
+            resolve: (value, { account, accountRef }) => {
+
+                var poster = axios({
+                    method: 'post',
+                    url: baseUrl + `/Account/${args.AccountRef}/Payment`,
+                    data: serialize(account),
+                    config: {
+                        headers: {'Content-Type': 'application/x-www-form-urlencoded'
+                        }
+                    }
+            })
+            .then(res => res.data)
+            .catch(function (response) {
+                //handle error
+                console.log(response);
+            });
+
             return poster;
         }
         }
-    }),
+    })
 });
+
 
 
 //Root Query
@@ -240,16 +478,23 @@ const RootQuery = new GraphQLObjectType({
     name: 'RootQueryType',
     fields: {
         Account: {
-            type: new GraphQLList(AccountType),
+            type: AccountType,
+            args: {
+                AccountRef: {type: GraphQLString}
+            },
             resolve(parent, args) {
-            return axios.get(`http://centrenet.powerleague.com/cgi-bin/ext/WebService/Booking/${args.AccountId}`)
-            .then(res => res.data);
-        }
+            return axios.get(baseUrl + `/Account/${args.AccountRef}`)
+        .then(res => res.data);
+    }
+},
+
+AccountBookings: {
+    type: new GraphQLList(BookingType),
+    args: {
+        AccountRef: {type: GraphQLString}
     },
-    AccountBookings: {
-        type: new GraphQLList(BookingType),
-        resolve(parent, args) {
-        return axios.get(`http://centrenet.powerleague.com/cgi-bin/ext/WebService/Booking/${args.AccountRef}`)
+    resolve(parent, args) {
+        return axios.get(baseUrl + `/Booking/${args.AccountRef}`)
         .then(res => res.data);
     }
 },
@@ -257,21 +502,40 @@ const RootQuery = new GraphQLObjectType({
 Booking: {
     type: BookingType,
     args: {
-        BookingId: {type: GraphQLString}
+        bookingId: {type: GraphQLString}
     },
     resolve(parent, args) {
-        return axios.get(`http://centrenet.powerleague.com/cgi-bin/ext/WebService/Booking/${args.BookingId}`)
+        return axios.get(baseUrl + `/Booking/${args.bookingId}`)
         .then(res => res.data);
     },
 
 },
+
+BubbleParty: {
+    type: BookingType,
+    args: {
+        bookingId: {type: GraphQLString}
+    },
+    resolve(parent, args) {
+        return axios.get(baseUrl + `/BubbleParty/${args.bookingId}`)
+        .then(res => res.data);
+    },
+},
+
 SiteBookings: {
     type: BookingType,
     args: {
-        SiteId: {type: GraphQLString}
+        siteId: {type: GraphQLString},
+        activityId: {type: GraphQLString},
+        bookingDate: {type: GraphQLString},
+        StartTime: {type: GraphQLString},
+        accountRef: {type: GraphQLString},
+        memberNum: {type: GraphQLString}
+
+
     },
     resolve(parent, args) {
-        return axios.get(`http://centrenet.powerleague.com/cgi-bin/ext/WebService/Site/${args.SiteId}/Booking`)
+        return axios.get(baseUrl + `/Site/${args.SiteId}/Booking`)
             .then(res => res.data);
         },
 
@@ -279,15 +543,16 @@ SiteBookings: {
     Sites: {
         type: new GraphQLList(SiteType),
         resolve(parent) {
-            return axios.get('http://centrenet.powerleague.com/cgi-bin/ext/WebService/Site')
+            return axios.get(baseUrl + '/Site')
             .then(res => res.data);
         },
 
     }
 
     }
-
 });
+
+
 
 module.exports = new GraphQLSchema({
     query: RootQuery,
