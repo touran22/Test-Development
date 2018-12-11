@@ -109,6 +109,73 @@ const BookingType = new GraphQLObjectType({
     })
 });
 
+const CampType = new GraphQLObjectType({
+    name: 'CampType',
+    fields: () => ({
+        ActivityTypeId: { type: GraphQLString },
+        ActivityTypeName: { type: GraphQLString },
+        AnalysisRefereeFee: { type: GraphQLString },
+        CampId: { type: GraphQLString },
+        CampName: { type: GraphQLString },
+        CampNotes: { type: GraphQLString },
+        CampRegister: {type: new GraphQLList(CampRegisterType)},
+        CampStatus: {type: GraphQLString},
+        DateCreated: {type: GraphQLString},
+        Dates: {type: new GraphQLList(CampRegistrationDateType)},
+        EarlyDropOffPrice: { type: GraphQLFloat },
+        EndDate: { type: GraphQLString },
+        EndTime: { type: GraphQLString },
+        FacilityTypeId: { type: GraphQLString },
+        LastModified: { type: GraphQLString },
+        LatePickUpPrice: { type: GraphQLInt },
+        MaxCapacity: { type: GraphQLInt },
+        PitchCount: { type: GraphQLInt },
+        RefereeFee: { type: GraphQLFloat },
+        RegistrationFee: { type: GraphQLFloat },
+        ShowOnline: { type: GraphQLBoolean },
+        SiteId: { type: GraphQLString },
+        SiteName: { type: GraphQLString },
+        SponsorName: { type: GraphQLString },
+        StartDate: { type: GraphQLString },
+        StartTime: { type: GraphQLString }
+    })
+});
+
+const CampRegisterType = new GraphQLObjectType({
+    name: 'CampRegisterType',
+    fields: () => ({
+        Balance: { type: GraphQLFloat },
+        BookingDate: { type: GraphQLString },
+        BookingId: { type: GraphQLString },
+        CampId: { type: GraphQLString },
+        CampRegisterId: { type: GraphQLString },
+        DateCreated: { type: GraphQLString },
+        Email: { type: GraphQLString },
+        FirstName: {type: GraphQLString},
+        GoodsTotal: {type: GraphQLFloat},
+        LastModified: {type: GraphQLString},
+        LastName: {type: GraphQLString},
+        MemberNum: {type: GraphQLString},
+        OnlineRegistration: {type: GraphQLBoolean},
+        Payment: {type: GraphQLFloat},
+        PersonId: {type: GraphQLString},
+        RegisterName: {type: GraphQLString},
+        ReplacedByPersonId: {type: GraphQLString},
+        ReplacementDate: {type: GraphQLString},
+        SLTransactionId: {type: GraphQLString},
+        Telephone: {type: GraphQLString},
+        VatTotal: {type: GraphQLFloat}
+    })
+});
+
+const CampRegistrationDateType = new GraphQLObjectType({
+    name: 'CampRegistrationDateType',
+    fields: () => ({
+        Date: { type: GraphQLString },
+        NumRegistered: { type: GraphQLInt }
+    })
+});
+
 const ContactType = new GraphQLObjectType({
     name: 'ContactType',
     fields: () => ({
@@ -186,6 +253,15 @@ const SiteType = new GraphQLObjectType({
         LastModified: { type: GraphQLString },
         Address: { type: AddressType },
         OpeningTime: { type: OpeningTimeType }
+    })
+});
+
+const TimeSlotBookingType = new GraphQLObjectType({
+    name: 'TimeSlotBookingType',
+    fields: () => ({
+        timeSlotId: { type: GraphQLString },
+        memberNum: { type: GraphQLString },
+        bookingType: { type: GraphQLString }
     })
 });
 
@@ -267,11 +343,10 @@ const NewPaymentInputType = new GraphQLInputObjectType({
     })
 });
 
-const NewTimeSlotInputType = new GraphQLInputObjectType({
-    name: 'NewTimeSlotInputType',
+const NewTimeSlotBookingInputType = new GraphQLInputObjectType({
+    name: 'NewTimeSlotBookingInputType',
     fields: () => ({
         timeSlotId: { type: GraphQLString },
-        accountRef: { type: GraphQLString },
         memberNum: { type: GraphQLString },
         bookingType: { type: GraphQLString }
     })
@@ -389,9 +464,35 @@ var MutationType = new GraphQLObjectType({
         }
         },
 
+        createBubbleParty: {
+            type: TimeSlotBookingType,
+            description: 'Create a Bubble Party',
+            args: {
+                timeslot: { type: NewTimeSlotBookingInputType }
+            },
+            resolve: (value, { timeslot }) => {
 
-        deleteParty: {
-            type: GraphQLObjectType,
+                var poster = axios({
+                    method: 'post',
+                    data: serialize(timeslot),
+                    url: baseUrl + `/BubbleParty`,
+                    config: {
+                    headers: {'Content-Type': 'application/x-www-form-urlencoded'
+                    }
+                    }
+            })
+            .then(res => res.data)
+            .catch(function (response) {
+                //handle error
+                console.log(response);
+            });
+
+            return poster;
+        }
+        },
+
+        deleteBubbleParty: {
+            type: GraphQLString,
             description: 'Delete a Bubble Party',
             args: {
                 bookingId: { type: GraphQLString }
@@ -415,9 +516,10 @@ var MutationType = new GraphQLObjectType({
             return poster;
         }
         },
-        processBookingPayment: {
+
+        processBubblePartyPayment: {
             type: BookingType,
-            description: 'Delete a booking',
+            description: 'Process a Bubble Party Payment',
             args: {
                 payment: { type: NewBookingPaymentInputType }
             },
@@ -425,6 +527,34 @@ var MutationType = new GraphQLObjectType({
 
                 var poster = axios({
                     method: 'post',
+                    data: serialize(payment),
+                    url: baseUrl + `/BubbleParty/${args.payment.bookingId}/Payment`,
+                    config: {
+                        headers: {'Content-Type': 'application/x-www-form-urlencoded'
+                        }
+                    }
+            })
+            .then(res => res.data)
+            .catch(function (response) {
+                //handle error
+                console.log(response);
+            });
+
+            return poster;
+        }
+        },
+
+        processBookingPayment: {
+            type: BookingType,
+            description: 'process a booking payment',
+            args: {
+                payment: { type: NewBookingPaymentInputType }
+            },
+            resolve: (value, { payment }) => {
+
+                var poster = axios({
+                    method: 'post',
+                    data: serialize(payment),
                     url: baseUrl + `/Booking/${args.payment.bookingId}/Payment`,
                     config: {
                         headers: {'Content-Type': 'application/x-www-form-urlencoded'
@@ -521,6 +651,30 @@ BubbleParty: {
         .then(res => res.data);
     },
 },
+
+Camp: {
+    type: CampType,
+    args: {
+        campId: {type: GraphQLString}
+    },
+    resolve(parent, args) {
+        return axios.get(baseUrl + `/Camp/${args.campId}`)
+        .then(res => res.data);
+    },
+},
+
+Site: {
+    type: SiteType,
+    args: {
+        siteId: {type: GraphQLString}
+    },
+    resolve(parent, args) {
+        return axios.get(baseUrl + `/Site/${args.siteId}`)
+        .then(res => res.data);
+    },
+},
+
+
 
 SiteBookings: {
     type: BookingType,
