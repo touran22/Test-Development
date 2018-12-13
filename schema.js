@@ -204,10 +204,60 @@ const DivisionType = new GraphQLObjectType({
         SponsorName: { type: GraphQLString },
         NumVacancies: { type: GraphQLString },
         DateCreated: { type: GraphQLString },
-        LastModified: { type: GraphQLString }
+        LastModified: { type: GraphQLString },
+        Table: {type: new GraphQLList(TableType)}
     })
 });
 
+
+
+const EnquiryType = new GraphQLObjectType({
+    name: 'EnquiryType',
+    fields: () => ({
+        EnquiryId: { type: GraphQLString},
+        SiteId: { type: GraphQLString },
+        FirstName: { type: GraphQLString },
+        LastName: { type: GraphQLString },
+        Telephone: { type: GraphQLString },
+        Email: { type: GraphQLString },
+        EnquiryType: { type: GraphQLString },
+        Notes: { type: GraphQLString },
+        OptIn: { type: GraphQLBoolean},
+        Over18: { type: GraphQLBoolean}
+    })
+});
+
+const FixtureType = new GraphQLObjectType({
+    name: 'FixtureType',
+    fields: () => ({
+        GameId: { type: GraphQLString},
+        GameName: { type: GraphQLString },
+        ScheduledDate: { type: GraphQLString },
+        PlayedDate: { type: GraphQLString },
+        GameStatus: { type: GraphQLString },
+        OriginalDate: { type: GraphQLString },
+        Type: { type: GraphQLString },
+        SiteId: { type: GraphQLString },
+        SiteName: { type: GraphQLString },
+        DivisionId: { type: GraphQLString },
+        TeamId: { type: GraphQLString },
+        VisitingTeamId: { type: GraphQLString },
+        BookingId: { type: GraphQLString },
+        FacilityId: { type: GraphQLString },
+        TournamentId: { type: GraphQLString },
+        DateCreated: { type: GraphQLString},
+        LastModified: { type: GraphQLString},
+        StartTime: { type: GraphQLString},
+        FormattedTime: { type: GraphQLString},
+        FormattedDate: { type: GraphQLString},
+        FacilityName: { type: GraphQLString},
+        DivisionName: { type: GraphQLString},
+        LeagueId: { type: GraphQLString},
+        LeagueName: { type: GraphQLString},
+        TeamName: { type: GraphQLString},
+        VisitingTeamName: { type: GraphQLString}
+    })
+});
 
 const GameType = new GraphQLObjectType({
     name: 'GameType',
@@ -249,53 +299,6 @@ const GameType = new GraphQLObjectType({
         DateCreated: { type: GraphQLString},
         LastModified: { type: GraphQLString},
         GoalScorers: {type: new GraphQLList(CampRegisterType)}
-    })
-});
-
-const EnquiryType = new GraphQLObjectType({
-    name: 'EnquiryType',
-    fields: () => ({
-        EnquiryId: { type: GraphQLString},
-        SiteId: { type: GraphQLString },
-        FirstName: { type: GraphQLString },
-        LastName: { type: GraphQLString },
-        Telephone: { type: GraphQLString },
-        Email: { type: GraphQLString },
-        EnquiryType: { type: GraphQLString },
-        Notes: { type: GraphQLString },
-        OptIn: { type: GraphQLBoolean},
-        Over18: { type: GraphQLBoolean}
-    })
-});
-
-const FixtureType = new GraphQLObjectType({
-    name: 'FixtureType',
-    fields: () => ({
-        GameId: { type: GraphQLString},
-        GameName: { type: GraphQLString },
-        ScheduledDate: { type: GraphQLString },
-        PlayedDate: { type: GraphQLString },
-        GameStatus: { type: GraphQLString },
-        OriginalDate: { type: GraphQLString },
-        Type: { type: GraphQLString },
-        SiteId: { type: GraphQLString },
-        DivisionId: { type: GraphQLString },
-        TeamId: { type: GraphQLString },
-        VisitingTeamId: { type: GraphQLString },
-        BookingId: { type: GraphQLString },
-        FacilityId: { type: GraphQLString },
-        TournamentId: { type: GraphQLString },
-        DateCreated: { type: GraphQLString},
-        LastModified: { type: GraphQLString},
-        StartTime: { type: GraphQLString},
-        FormattedTime: { type: GraphQLString},
-        FormattedDate: { type: GraphQLString},
-        FacilityName: { type: GraphQLString},
-        DivisionName: { type: GraphQLString},
-        LeagueId: { type: GraphQLString},
-        LeagueName: { type: GraphQLString},
-        TeamName: { type: GraphQLString},
-        VisitingTeamName: { type: GraphQLString}
     })
 });
 
@@ -410,6 +413,26 @@ const SiteType = new GraphQLObjectType({
         LastModified: { type: GraphQLString },
         Address: { type: AddressType },
         OpeningTime: { type: OpeningTimeType }
+    })
+});
+
+const TableType = new  GraphQLObjectType({
+    name: 'TableType',
+    fields: () => ({
+        TeamName: { type: GraphQLString },
+        LeagueName: { type: GraphQLString },
+        DivisionName: { type: GraphQLString },
+        LeagueId: { type: GraphQLString },
+        DivisionId: { type: GraphQLString },
+        TeamId: { type: GraphQLString },
+        Wins: { type: GraphQLString },
+        Losses: { type: GraphQLString },
+        Draws: { type: GraphQLString },
+        GoalsFor: { type: GraphQLString },
+        GoalsAgainst: { type: GraphQLString },
+        Points: { type: GraphQLString },
+        PenaltyPoints: { type: GraphQLString },
+        LastModified: { type: GraphQLString }
     })
 });
 
@@ -1268,7 +1291,7 @@ KidsPartyExtras: {
 
 
 League: {
-    type: SiteType,
+    type: LeagueType,
     args: {
         leagueId: {type: GraphQLString}
     },
@@ -1285,7 +1308,29 @@ LeagueFixtures: {
         leagueId: {type: GraphQLString}
     },
     resolve(parent, args) {
+        return axios.get(baseUrl + `/League/${args.leagueId}/Results`)
+        .then(res => res.data);
+    },
+},
+
+LeagueResults: {
+    type: new GraphQLList(FixtureType),
+    args: {
+        leagueId: {type: GraphQLString}
+    },
+    resolve(parent, args) {
         return axios.get(baseUrl + `/League/${args.leagueId}/Fixtures`)
+        .then(res => res.data);
+    },
+},
+
+LeagueTables: {
+    type: new GraphQLList(LeagueType),
+    args: {
+        leagueId: {type: GraphQLString}
+    },
+    resolve(parent, args) {
+        return axios.get(baseUrl + `/League/${args.leagueId}/Tables`)
         .then(res => res.data);
     },
 },
