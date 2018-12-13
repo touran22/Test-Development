@@ -355,7 +355,34 @@ const LeagueType = new GraphQLObjectType({
 const MemberType = new GraphQLObjectType({
     name: 'MemberType',
     fields: () => ({
-        EnquiryId: { type: GraphQLString}
+        AccountRef: { type: GraphQLString},
+        PersonId: { type: GraphQLString},
+        MemberNum: { type: GraphQLString},
+        FirstName: { type: GraphQLString},
+        LastName: { type: GraphQLString},
+        MetaphoneName: { type: GraphQLString},
+        Email: { type: GraphQLString},
+        Active: { type: GraphQLBoolean},
+        Gender: { type: GraphQLString},
+        Birthday: { type: GraphQLString},
+        LastVisit: { type: GraphQLString},
+        Expires: { type: GraphQLString},
+        DiscountCode: { type: GraphQLString},
+        DiscountExpires: { type: GraphQLString},
+        OnlineUserId: { type: GraphQLString},
+        ClubName: { type: GraphQLString},
+        EmailNotifications: { type: GraphQLString},
+        OptIn: { type: GraphQLBoolean},
+        ReferredBy: { type: GraphQLString},
+        SiteId: { type: GraphQLString},
+        AddressId: { type: GraphQLString},
+        AccountId: { type: GraphQLString},
+        DateCreated: { type: GraphQLString},
+        LastModified: { type: GraphQLString},
+        CreatedBy: { type: GraphQLString},
+        ModifiedBy: { type: GraphQLString},
+        Address: {type: AddressType},
+        Contact: {type: new GraphQLList(ContactType)},
     })
 });
 
@@ -582,6 +609,28 @@ const NewBookingPaymentInputType = new GraphQLInputObjectType({
         bookingId: { type: GraphQLString },
         amount: { type: GraphQLString },
         paymentRef: { type: GraphQLString }
+    })
+});
+
+const MemberInputType = new GraphQLInputObjectType({
+    name: 'MemberInputType',
+    fields: () => ({
+
+        FirstName: { type: GraphQLString},
+        LastName: { type: GraphQLString},
+        Email: { type: GraphQLString},
+        Telephone: { type: GraphQLString},
+        Mobile: { type: GraphQLString},
+        DoB: { type: GraphQLString},
+        Gender: { type: GraphQLString},
+        Address1: { type: GraphQLString},
+        Address2: { type: GraphQLString},
+        CityTown: { type: GraphQLString},
+        County: { type: GraphQLString},
+        PostCode: { type: GraphQLString},
+        CountryId: { type: GraphQLString},
+        SiteId: { type: GraphQLString},
+        OptIn: { type: GraphQLBoolean}
     })
 });
 
@@ -1009,22 +1058,22 @@ var MutationType = new GraphQLObjectType({
                         activityId: args.activityId
                     },
                     url: baseUrl + `/KidsParty/${args.timeSlotId}`,
-                config: {
-                    headers: {'Content-Type': 'application/x-www-form-urlencoded'
+                    config: {
+                        headers: {'Content-Type': 'application/x-www-form-urlencoded'
+                        }
                     }
-                }
-        })
-        .then(res => res.data)
-        .catch(function (response) {
-            //handle error
-            console.log(response);
-        });
+            })
+            .then(res => res.data)
+            .catch(function (response) {
+                //handle error
+                console.log(response);
+            });
 
-        return poster;
+            return poster;
         }
         },
-        
-                createFunction: {
+
+        createFunction: {
             type: BookingType,
             args: {
                 timeSlot: { type: NewFunctionTimeSlotInputType }
@@ -1048,9 +1097,64 @@ var MutationType = new GraphQLObjectType({
 
             return poster;
         }   
-        }, 
+        },
 
-    })
+        updateMember: {
+            type: MemberType,
+            description: 'update member',
+            args: {
+                member: { type: MemberInputType }
+            },
+            resolve: (value, { payment }) => {
+
+                var poster = axios({
+                    method: 'put',
+                    params: args.member,
+                    url: baseUrl + `/Member/${args.member.onlineMemberId}`,
+                    config: {
+                        headers: {'Content-Type': 'application/x-www-form-urlencoded'
+                        }
+                    }
+            })
+            .then(res => res.data)
+            .catch(function (response) {
+                //handle error
+                console.log(response);
+            });
+
+            return poster;
+        }
+        }  
+    }),
+    updateMemberPassword: {
+        type: MemberType,
+        description: 'update member password',
+        args: {
+            onlineUserid: { type: GraphQLString },
+            password: { type: GraphQLString }
+        },
+        resolve: (value, { onlineUserid, password }) => {
+
+            var poster = axios({
+                method: 'post',
+                params: {
+                    Password: args.password
+                },
+                url: baseUrl + `/Member/${args.member.onlineMemberId}/Password/Update`,
+                config: {
+                    headers: {'Content-Type': 'application/x-www-form-urlencoded'
+                    }
+                }
+        })
+        .then(res => res.data)
+        .catch(function (response) {
+            //handle error
+            console.log(response);
+        });
+
+        return poster;
+    }
+    }
 });
 
 
@@ -1201,14 +1305,14 @@ KidsPartySlotsAvailable: {
         numGuests: {type: GraphQLInt}
     },
     resolve: (value, args ) => {
-    
+
         var poster = axios({
             method: 'get',
             url: baseUrl + `/KidsParty`,
             params: {
-                siteId: args.siteId,
-                date: args.date,
-                numGuests: args.numGuests
+            siteId: args.siteId,
+            date: args.date,
+            numGuests: args.numGuests
             },
             config: {
                 headers: {'Content-Type': 'application/x-www-form-urlencoded'
@@ -1234,7 +1338,7 @@ KidsPartyTimeSlotPrice: {
         numGuests: {type: GraphQLInt}
     },
     resolve: (value, args ) => {
-    
+
         var poster = axios({
             method: 'get',
             url: baseUrl + `/KidsParty/${args.timeSlotId}/Price`,
@@ -1265,7 +1369,7 @@ KidsPartyExtras: {
         numGuests: {type: GraphQLInt}
     },
     resolve: (value, args ) => {
-    
+
         var poster = axios({
             method: 'get',
             url: baseUrl + `/KidsParty/${args.timeSlotId}/Extras`,
@@ -1334,6 +1438,71 @@ LeagueTables: {
         .then(res => res.data);
     },
 },
+
+Member: {
+    type: MemberType,
+    args: {
+        onlineUserId: {type: GraphQLString}
+    },
+    resolve(parent, args) {
+        return axios.get(baseUrl + `/Member/${args.onlineUserId}`)
+        .then(res => res.data);
+    },
+},
+
+MemberBookings: {
+    type: new GraphQLList(BookingType),
+    args: {
+        onlineUserId: {type: GraphQLString}
+    },
+    resolve(parent, args) {
+        return axios.get(baseUrl + `/Member/${args.onlineUserId}/Bookings`)
+        .then(res => res.data);
+    },
+},
+
+MemberAuthenticate: {
+    type: BookingType,
+    args: {
+        Email: {type: GraphQLString},
+        Password: {type: GraphQLString}
+    },
+    resolve: (value, args ) => {
+
+        var poster = axios({
+            method: 'post',
+            url: baseUrl + `/Member/Authenticate`,
+            params: {
+            Email: args.Email,
+            numGuests: args.Password
+            },
+            config: {
+                headers: {'Content-Type': 'application/x-www-form-urlencoded'
+                }
+            }
+    })
+    .then(res => res.data)
+    .catch(function (response) {
+        //handle error
+        console.log(response);
+    });
+
+    return poster;
+}
+},
+
+MemberByAccountRef: {
+    type: MemberType,
+    args: {
+        accountRef: {type: GraphQLString}
+    },
+    resolve(parent, args) {
+        return axios.get(baseUrl + `/Member/AccountRef/${args.accountRef}`)
+        .then(res => res.data);
+    },
+},
+
+
 
 
 Site: {
