@@ -196,7 +196,50 @@ const ContactType = new GraphQLObjectType({
     })
 });
 
-//enquiry Type
+
+const GameType = new GraphQLObjectType({
+    name: 'GameType',
+    fields: () => ({
+        SiteName: { type: GraphQLString},
+        League: { type: GraphQLString },
+        Division: { type: GraphQLString },
+        GameName: { type: GraphQLString },
+        Referee: { type: GraphQLString },
+        HomeTeam: { type: GraphQLString },
+        PlayedDate: { type: GraphQLString },
+        HomeScore: { type: GraphQLString },
+        VisitingTeam: { type: GraphQLString},
+        VisitorScore: { type: GraphQLInt},
+        Type: { type: GraphQLString},
+        GameId: { type: GraphQLString},
+        ScheduleDate: { type: GraphQLString},
+        GameStatus: { type: GraphQLString},
+        OriginalDate: { type: GraphQLString},
+        HomePP: { type: GraphQLString},
+        VisitorPP: { type: GraphQLString},
+        RefereePayment: { type: GraphQLString},
+        RefereePaymentRef: { type: GraphQLString},
+        ForfeitTeam: { type: GraphQLString},
+        PostponeTeam: { type: GraphQLString},
+        TeamConfirmed: { type: GraphQLBoolean},
+        TeamConfirmedDate: { type: GraphQLString},
+        VisitorConfirmedIP: { type: GraphQLString},
+        VisitorConfirmedReqSent: { type: GraphQLString},
+        TeamConfirmedReqSent: { type: GraphQLString},
+        SiteId: { type: GraphQLString},
+        DivisionId: { type: GraphQLString},
+        TeamId: { type: GraphQLString},
+        VisitingTeamId: { type: GraphQLString},
+        BookingId: { type: GraphQLString},
+        RefereeId: { type: GraphQLString},
+        FacilityId: { type: GraphQLString},
+        TournamentId: { type: GraphQLString},
+        DateCreated: { type: GraphQLString},
+        LastModified: { type: GraphQLString},
+        GoalScorers: {type: new GraphQLList(CampRegisterType)}
+    })
+});
+
 const EnquiryType = new GraphQLObjectType({
     name: 'EnquiryType',
     fields: () => ({
@@ -213,7 +256,14 @@ const EnquiryType = new GraphQLObjectType({
     })
 });
 
-//OpeningTime Type
+const MemberType = new GraphQLObjectType({
+    name: 'MemberType',
+    fields: () => ({
+        EnquiryId: { type: GraphQLString}
+    })
+});
+
+
 const OpeningTimeType = new GraphQLObjectType({
     name: 'OpeningTimeType',
     fields: () => ({
@@ -279,6 +329,46 @@ const TimeSlotBookingType = new GraphQLObjectType({
     })
 });
 
+const TimeSlotType = new GraphQLObjectType({
+    name: 'TimeSlotType',
+    fields: () => ({
+        TimeSlotId: { type: GraphQLString },
+        BookingDate: { type: GraphQLString },
+        StartTime: { type: GraphQLString },
+        Duration: { type: GraphQLString },
+        SlotStatus: { type: GraphQLString },
+        ShowOnline: { type: GraphQLBoolean },
+        Discount: { type: GraphQLFloat },
+        LockedBy: { type: GraphQLString },
+        LockTimeout: { type: GraphQLString },
+        MadeToMove: { type: GraphQLBoolean },
+        SiteId: { type: GraphQLString },
+        FacilityId: { type: GraphQLString },
+        DateCreated: { type: GraphQLString },
+        LastModified: { type: GraphQLString },
+        AdhocTimeSlots: { type: GraphQLBoolean },
+        EndTime: { type: GraphQLInt },
+        SiteName: { type: GraphQLString },
+        FacilityName: { type: GraphQLString },
+        FacilityTypeId: { type: GraphQLString },
+        FacilityTypeName: { type: GraphQLString },
+        MinOccupancy: { type: GraphQLInt },
+        MaxOccupancy: { type: GraphQLInt },
+        DefaultBookingType: { type: GraphQLString },
+        MultipleBookings: { type: GraphQLBoolean },
+        FullPrice: { type: GraphQLFloat },
+        DiscountedPrice: { type: GraphQLFloat },
+        BlockBookingPrice: { type: GraphQLFloat },
+        CurrencyCode: { type: GraphQLString },
+        CurrencySymbol: { type: GraphQLString },
+        DiscountCode: { type: GraphQLString },
+        DiscountValue: { type: GraphQLString },
+        BookingTypeCode: { type: GraphQLString },
+        BookingTypeName: { type: GraphQLString },
+        BlockAvailable: { type: GraphQLBoolean }
+    })
+});
+
 
 const TransactionType = new GraphQLObjectType({
     name: 'TransactionType',
@@ -331,10 +421,10 @@ const NewCampBookingInputType = new GraphQLInputObjectType({
     name: 'NewCampBookingInputType',
     fields: () => ({
         memberNum: { type: GraphQLString },
-        'childDetails[]': { type: GraphQLString },
-        'dates[]': { type: GraphQLString },
-        'earlyDates[]': { type: GraphQLString },
-        'latesDates[]': { type: GraphQLString },  
+        childDetails: { type: GraphQLString },
+        dates: { type: GraphQLString },
+        earlyDates: { type: GraphQLString },
+        latestDates: { type: GraphQLString }  
     })
 });
 
@@ -357,7 +447,18 @@ const NewEnquiryInputType = new GraphQLInputObjectType({
         EnquiryType: { type: GraphQLString },
         Notes: { type: GraphQLString }
     })
-});       
+});  
+
+const NewFunctionTimeSlotInputType = new GraphQLInputObjectType({
+    name: 'NewFunctionTimeSlotInputType',
+    fields: () => ({
+        timeSlotId: { type: GraphQLString },
+        startTime: { type: GraphQLString },
+        duration: { type: GraphQLInt },
+        memberNum: { type: GraphQLString },        
+        activityId: { type: GraphQLString }
+    })
+});     
 
 const NewBookingPaymentInputType = new GraphQLInputObjectType({
     name: 'NewBookingPaymentInputType',
@@ -632,14 +733,14 @@ var MutationType = new GraphQLObjectType({
             return poster;
         }
         },
-        
+
         createCampBooking: {
             type: BookingType,
             args: {
                 campId: {type: GraphQLString },
                 bookingDetails: { type: NewCampBookingInputType }
             },
-             resolve: (value, bookingDetails) => {
+            resolve: (value, bookingDetails) => {
 
                 var poster = axios({
                     method: 'post',
@@ -658,7 +759,142 @@ var MutationType = new GraphQLObjectType({
 
             return poster;
         }   
+        },
+
+        createFunction: {
+            type: BookingType,
+            args: {
+                timeSlot: { type: NewFunctionTimeSlotInputType }
+            },
+            resolve: (value, bookingDetails) => {
+
+                var poster = axios({
+                    method: 'post',
+                    url: baseUrl + `/Function`,
+                    data: serialize(timeSlot),
+                    config: {
+                    headers: {'Content-Type': 'application/x-www-form-urlencoded'
+                    }
+                    }
+            })
+            .then(res => res.data)
+            .catch(function (response) {
+                //handle error
+                console.log(response);
+            });
+
+            return poster;
+        }   
+        },
+
+        processFunctionPayment: {
+            type: BookingType,
+            description: 'process a function payment',
+            args: {
+                payment: { type: NewBookingPaymentInputType }
+            },
+            resolve: (value, { payment }) => {
+
+                var poster = axios({
+                    method: 'post',
+                    data: serialize(payment),
+                    url: baseUrl + `/Function/${args.payment.bookingId}/Payment`,
+                    config: {
+                        headers: {'Content-Type': 'application/x-www-form-urlencoded'
+                        }
+                    }
+            })
+            .then(res => res.data)
+            .catch(function (response) {
+                //handle error
+                console.log(response);
+            });
+
+            return poster;
         }
+        },        
+
+        deleteFunction: {
+            type: BookingType,
+            description: 'Delete a function',
+            args: {
+                bookingId: { type: GraphQLString }
+            },
+            resolve: (value, { account, accountRef }) => {
+
+                var poster = axios({
+                    method: 'delete',
+                    url: baseUrl + `/Function/${args.bookingId}`,
+                    config: {
+                        headers: {'Content-Type': 'application/x-www-form-urlencoded'
+                        }
+                    }
+            })
+            .then(res => res.data)
+            .catch(function (response) {
+                //handle error
+                console.log(response);
+            });
+
+            return poster;
+        }
+        }, 
+
+        addGoalScorer: {
+            type: BookingType,
+            description: 'Delete a goalscorer',
+            args: {
+                gameId: { type: GraphQLString },
+                personId: { type: GraphQLString },
+                numGoals: { type: GraphQLInt }
+            },
+            resolve: (value, { gameId, personId, numGoals }) => {
+
+                var poster = axios({
+                    method: 'post',
+                    url: baseUrl + `/GoalScorer/${args.personId}/Fixture/${args.gameId}`,
+                config: {
+                    headers: {'Content-Type': 'application/x-www-form-urlencoded'
+                    }
+                }
+        })
+        .then(res => res.data)
+        .catch(function (response) {
+            //handle error
+            console.log(response);
+        });
+
+        return poster;
+        }
+        },
+
+        removeGoalScorer: {
+            type: BookingType,
+            description: 'Delete a goalscorer',
+            args: {
+                gameId: { type: GraphQLString },
+                personId: { type: GraphQLString }
+            },
+            resolve: (value, { gameId, personId }) => {
+
+                var poster = axios({
+                    method: 'delete',
+                    url: baseUrl + `/GoalScorer/${args.personId}/Fixture/${args.gameId}`,
+                config: {
+                    headers: {'Content-Type': 'application/x-www-form-urlencoded'
+                    }
+                }
+        })
+        .then(res => res.data)
+        .catch(function (response) {
+            //handle error
+            console.log(response);
+        });
+
+        return poster;
+        }
+        } 
+
     })
 });
 
@@ -777,11 +1013,63 @@ CampPrice: {
 
     return poster;
 
-}
+}          
 },
 
+FixtureGoalScorers: {
+    type: GameType,
+    args: {
+        gameId: {type: GraphQLString}
+    },
+    resolve(parent, args) {
+        return axios.get(baseUrl + `/GoalScorer/${args.gameId}/Fixture`)
+        .then(res => res.data);
+    },
+},
 
+Function: {
+    type: BookingType,
+    args: {
+        bookingId: {type: GraphQLString}
+    },
+    resolve(parent, args) {
+        return axios.get(baseUrl + `/Booking/${args.bookingId}`)
+        .then(res => res.data);
+    },
+},
 
+KidsPartySlotsAvailable: {
+    type: new GraphQLList(TimeSlotType),
+    args: {
+        siteId: {type: GraphQLString},
+        date: {type: GraphQLString},
+        numGuests: {type: GraphQLInt}
+    },
+    resolve: (value, args ) => {
+    
+        var poster = axios({
+            method: 'get',
+            url: baseUrl + `/KidsParty`,
+            params: {
+                siteId: args.siteId,
+                date: args.date,
+                numGuests: args.numGuests
+            },
+            config: {
+                headers: {'Content-Type': 'application/x-www-form-urlencoded'
+                }
+            }
+    })
+    .then(res => res.data)
+    .catch(function (response) {
+        //handle error
+        console.log(response);
+    });
+
+    return poster;
+
+} 
+},
 
 Site: {
     type: SiteType,
@@ -831,10 +1119,31 @@ SiteBookings: {
     },
     resolve(parent, args) {
         return axios.get(baseUrl + `/Site/${args.SiteId}/Booking`)
-            .then(res => res.data);
-        },
-
+        .then(res => res.data);
     },
+
+},
+Sites: {
+    type: new GraphQLList(SiteType),
+    resolve(parent) {
+        return axios.get(baseUrl + '/Site')
+        .then(res => res.data);
+    },
+
+},
+
+
+SiteTimeSlots: {
+    type: SiteType,
+    args: {
+        siteId: {type: GraphQLString}
+    },
+    resolve(parent, args) {
+        return axios.get(baseUrl + `/Site/${args.siteId}/GetBookingSlots`)
+            .then(res => res.data);
+        }
+    },
+
     Sites: {
         type: new GraphQLList(SiteType),
         resolve(parent) {
@@ -846,6 +1155,8 @@ SiteBookings: {
 
     }
 });
+
+
 
 
 
