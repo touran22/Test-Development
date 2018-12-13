@@ -196,6 +196,18 @@ const ContactType = new GraphQLObjectType({
     })
 });
 
+const DivisionType = new GraphQLObjectType({
+    name: 'DivisionType',
+    fields: () => ({
+        DivisionId: { type: GraphQLString },
+        DivisionName: { type: GraphQLString },
+        SponsorName: { type: GraphQLString },
+        NumVacancies: { type: GraphQLString },
+        DateCreated: { type: GraphQLString },
+        LastModified: { type: GraphQLString }
+    })
+});
+
 
 const GameType = new GraphQLObjectType({
     name: 'GameType',
@@ -253,6 +265,87 @@ const EnquiryType = new GraphQLObjectType({
         Notes: { type: GraphQLString },
         OptIn: { type: GraphQLBoolean},
         Over18: { type: GraphQLBoolean}
+    })
+});
+
+const FixtureType = new GraphQLObjectType({
+    name: 'FixtureType',
+    fields: () => ({
+        GameId: { type: GraphQLString},
+        GameName: { type: GraphQLString },
+        ScheduledDate: { type: GraphQLString },
+        PlayedDate: { type: GraphQLString },
+        GameStatus: { type: GraphQLString },
+        OriginalDate: { type: GraphQLString },
+        Type: { type: GraphQLString },
+        SiteId: { type: GraphQLString },
+        DivisionId: { type: GraphQLString },
+        TeamId: { type: GraphQLString },
+        VisitingTeamId: { type: GraphQLString },
+        BookingId: { type: GraphQLString },
+        FacilityId: { type: GraphQLString },
+        TournamentId: { type: GraphQLString },
+        DateCreated: { type: GraphQLString},
+        LastModified: { type: GraphQLString},
+        StartTime: { type: GraphQLString},
+        FormattedTime: { type: GraphQLString},
+        FormattedDate: { type: GraphQLString},
+        FacilityName: { type: GraphQLString},
+        DivisionName: { type: GraphQLString},
+        LeagueId: { type: GraphQLString},
+        LeagueName: { type: GraphQLString},
+        TeamName: { type: GraphQLString},
+        VisitingTeamName: { type: GraphQLString}
+    })
+});
+
+const ItemType = new GraphQLObjectType({
+    name: 'ItemType',
+    fields: () => ({
+        ItemId: { type: GraphQLString},
+        ItemCode: { type: GraphQLString},
+        ItemName: { type: GraphQLString},
+        ItemTypeName: { type: GraphQLString},
+        Hire: { type: GraphQLBoolean},
+        Quantity: { type: GraphQLInt},
+        Price: { type: GraphQLFloat},
+        Deposit: { type: GraphQLFloat},
+        DiscountValue: { type: GraphQLFloat},
+        UnitOfMeasure: { type: GraphQLString},
+        UnitCharge: { type: GraphQLFloat},
+        Notes: { type: GraphQLString},
+        TakeAll: { type: GraphQLBoolean}
+    })
+});
+
+const LeagueType = new GraphQLObjectType({
+    name: 'LeagueType',
+    fields: () => ({
+        LeagueId: { type: GraphQLString},
+        LeagueName: { type: GraphQLString},
+        StartDate: { type: GraphQLString},
+        EndDate: { type: GraphQLString},
+        LeagueStatus: { type: GraphQLString},
+        SponsorName: { type: GraphQLString},
+        GameFee: { type: GraphQLFloat},
+        RegistrationFee: { type: GraphQLFloat},
+        StandByFee: { type: GraphQLFloat},
+        PointsForWin: { type: GraphQLInt},
+        PointsForLoss: { type: GraphQLInt},
+        PointsForDraw: { type: GraphQLInt},
+        PointsForForfeit: { type: GraphQLInt},
+        TeamsForDivision: { type: GraphQLInt},
+        NumDivisions: { type: GraphQLInt},
+        NumRounds: { type: GraphQLInt},
+        NumTeams: { type: GraphQLInt},
+        GamesPerWeek: { type: GraphQLInt},
+        SiteId: { type: GraphQLString},
+        SiteName: { type: GraphQLString},
+        ActivityTypeName: { type: GraphQLString},
+        FacilityTypeId: { type: GraphQLString},
+        DateCreated: { type: GraphQLString},
+        LastModified: { type: GraphQLString},
+        Divisions: {type: new GraphQLList(DivisionType)}
     })
 });
 
@@ -868,18 +961,31 @@ var MutationType = new GraphQLObjectType({
         }
         },
 
-        removeGoalScorer: {
+        bookKidsParty: {
             type: BookingType,
             description: 'Delete a goalscorer',
             args: {
-                gameId: { type: GraphQLString },
-                personId: { type: GraphQLString }
+                timeSlotId: { type: GraphQLString },
+                accountRef: { type: GraphQLString },
+                memberNum: { type: GraphQLString },
+                name: { type: GraphQLString },
+                numGuests: { type: GraphQLInt },
+                itemId: { type: GraphQLString },
+                activityId: { type: GraphQLString },
             },
-            resolve: (value, { gameId, personId }) => {
+            resolve: (value, { timeSlotId, accountRef, memberNum, name, numGuests, itemId, activityId }) => {
 
                 var poster = axios({
-                    method: 'delete',
-                    url: baseUrl + `/GoalScorer/${args.personId}/Fixture/${args.gameId}`,
+                    method: 'post',
+                    params: {
+                        accountRef: args.accountRef,
+                        memberNum: args.memberNum,
+                        name: args.name,
+                        numGuests: args.numGuests,
+                        'itemId[]': args.itemId,
+                        activityId: args.activityId
+                    },
+                    url: baseUrl + `/KidsParty/${args.timeSlotId}`,
                 config: {
                     headers: {'Content-Type': 'application/x-www-form-urlencoded'
                     }
@@ -893,7 +999,33 @@ var MutationType = new GraphQLObjectType({
 
         return poster;
         }
-        } 
+        },
+        
+                createFunction: {
+            type: BookingType,
+            args: {
+                timeSlot: { type: NewFunctionTimeSlotInputType }
+            },
+            resolve: (value, bookingDetails) => {
+
+                var poster = axios({
+                    method: 'post',
+                    url: baseUrl + `/Function`,
+                    data: serialize(timeSlot),
+                    config: {
+                    headers: {'Content-Type': 'application/x-www-form-urlencoded'
+                    }
+                    }
+            })
+            .then(res => res.data)
+            .catch(function (response) {
+                //handle error
+                console.log(response);
+            });
+
+            return poster;
+        }   
+        }, 
 
     })
 });
@@ -1070,6 +1202,94 @@ KidsPartySlotsAvailable: {
 
 } 
 },
+
+KidsPartyTimeSlotPrice: {
+    type: new GraphQLList(ItemType),
+    args: {
+        timeSlotId: {type: GraphQLString},
+        activityId: {type: GraphQLString},
+        numGuests: {type: GraphQLInt}
+    },
+    resolve: (value, args ) => {
+    
+        var poster = axios({
+            method: 'get',
+            url: baseUrl + `/KidsParty/${args.timeSlotId}/Price`,
+            params: {
+                date: args.activityId,
+                numGuests: args.numGuests
+            },
+            config: {
+                headers: {'Content-Type': 'application/x-www-form-urlencoded'
+                }
+            }
+    })
+    .then(res => res.data)
+    .catch(function (response) {
+        //handle error
+        console.log(response);
+    });
+
+    return poster;
+} 
+},
+
+KidsPartyExtras: {
+    type: new GraphQLList(ItemType),
+    args: {
+        timeSlotId: {type: GraphQLString},
+        activityId: {type: GraphQLString},
+        numGuests: {type: GraphQLInt}
+    },
+    resolve: (value, args ) => {
+    
+        var poster = axios({
+            method: 'get',
+            url: baseUrl + `/KidsParty/${args.timeSlotId}/Extras`,
+            params: {
+                date: args.activityId,
+                numGuests: args.numGuests
+            },
+            config: {
+                headers: {'Content-Type': 'application/x-www-form-urlencoded'
+                }
+            }
+    })
+    .then(res => res.data)
+    .catch(function (response) {
+        //handle error
+        console.log(response);
+    });
+
+    return poster;
+
+} 
+},
+
+
+League: {
+    type: SiteType,
+    args: {
+        leagueId: {type: GraphQLString}
+    },
+    resolve(parent, args) {
+        return axios.get(baseUrl + `/League/${args.leagueId}`)
+        .then(res => res.data);
+    },
+},
+
+
+LeagueFixtures: {
+    type: new GraphQLList(FixtureType),
+    args: {
+        leagueId: {type: GraphQLString}
+    },
+    resolve(parent, args) {
+        return axios.get(baseUrl + `/League/${args.leagueId}/Fixtures`)
+        .then(res => res.data);
+    },
+},
+
 
 Site: {
     type: SiteType,
