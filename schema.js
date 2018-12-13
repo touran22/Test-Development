@@ -327,6 +327,17 @@ const CampPriceInputType = new GraphQLInputObjectType({
 }); 
 
 
+const NewCampBookingInputType = new GraphQLInputObjectType({
+    name: 'NewCampBookingInputType',
+    fields: () => ({
+        memberNum: { type: GraphQLString },
+        'childDetails[]': { type: GraphQLString },
+        'dates[]': { type: GraphQLString },
+        'earlyDates[]': { type: GraphQLString },
+        'latesDates[]': { type: GraphQLString },  
+    })
+});
+
 const NewCredentialsInputType = new GraphQLInputObjectType({
     name: 'NewCredentialsInputType',
     fields: () => ({
@@ -620,6 +631,33 @@ var MutationType = new GraphQLObjectType({
 
             return poster;
         }
+        },
+        
+        createCampBooking: {
+            type: BookingType,
+            args: {
+                campId: {type: GraphQLString },
+                bookingDetails: { type: NewCampBookingInputType }
+            },
+             resolve: (value, bookingDetails) => {
+
+                var poster = axios({
+                    method: 'post',
+                    url: baseUrl + `/Camp/${args.campId}/Booking`,
+                    data: serialize(bookingDetails),
+                    config: {
+                        headers: {'Content-Type': 'application/x-www-form-urlencoded'
+                        }
+                    }
+            })
+            .then(res => res.data)
+            .catch(function (response) {
+                //handle error
+                console.log(response);
+            });
+
+            return poster;
+        }   
         }
     })
 });
@@ -686,6 +724,14 @@ Camp: {
     },
 },
 
+Camps: {
+    type: new GraphQLList(CampType),
+    resolve(parent, args) {
+        return axios.get(baseUrl + `/Camp/All`)
+        .then(res => res.data);
+    },
+},
+
 
 CampSuggestions: {
     type: CampType,
@@ -709,11 +755,8 @@ CampPrice: {
 
     },   
     resolve: (value, args ) => {
-
-        //var vars = merge(args.childDetails, args.dates, args.earlyDates);
-       // var vars = serialize(args);
         console.log(args.childDetails);
-        
+
         var poster = axios({
             method: 'get',
             url: baseUrl + `/Camp/${args.campId}/Price/`,
@@ -738,6 +781,8 @@ CampPrice: {
 },
 
 
+
+
 Site: {
     type: SiteType,
     args: {
@@ -747,6 +792,18 @@ Site: {
         return axios.get(baseUrl + `/Site/${args.siteId}`)
         .then(res => res.data);
     },
+},
+
+SiteCamps: {
+    type: new GraphQLList(CampType),
+    args: {
+        siteId: {type: GraphQLString}
+
+    },   
+    resolve(parent, args) {
+        return axios.get(baseUrl + `/Camp/Site/${args.siteId}`)
+        .then(res => res.data);
+    }
 },
 
 SiteFromName: {
