@@ -9,6 +9,13 @@ function serialize( obj ) {
     return Object.keys(obj).reduce(function(a,k){a.push(k+'='+encodeURIComponent(obj[k]));return a},[]).join('&')
 }
 
+function merge(obj, src) {
+    for (var key in src) {
+        if (src.hasOwnProperty(key)) obj[key] = src[key];
+    }
+    return obj;
+}
+
 
 const AccountType = new GraphQLObjectType({
     name: 'AccountType',
@@ -240,6 +247,13 @@ const OnlineUserType = new GraphQLObjectType({
     })
 });
 
+const PriceType = new  GraphQLObjectType({
+    name: 'PriceType',
+    fields: () => ({
+        FullPrice: { type: GraphQLFloat }
+    })
+});
+
 const SiteType = new GraphQLObjectType({
     name: 'SiteType',
     fields: () => ({
@@ -303,6 +317,15 @@ const NewAccountInputType = new GraphQLInputObjectType({
         OptIn: { type: GraphQLBoolean }
     })
 });
+
+const CampPriceInputType = new GraphQLInputObjectType({
+    name: 'CampPriceInputType',
+    fields: () => ({
+        childDetails: { type: GraphQLString },
+        password: { type: GraphQLString }
+    })
+}); 
+
 
 const NewCredentialsInputType = new GraphQLInputObjectType({
     name: 'NewCredentialsInputType',
@@ -663,6 +686,58 @@ Camp: {
     },
 },
 
+
+CampSuggestions: {
+    type: CampType,
+    args: {
+        campId: {type: GraphQLString}
+    },
+    resolve(parent, args) {
+        return axios.get(baseUrl + `/Camp/${args.campId}/Suggest`)
+        .then(res => res.data);
+    },
+},
+
+CampPrice: {
+    type: PriceType,
+    args: {
+        campId: {type: GraphQLString},
+        childDetails: {type: GraphQLString},
+        dates: {type: GraphQLString},
+        earlyDates: {type: GraphQLString},
+        lateDates: {type: GraphQLString}
+
+    },   
+    resolve: (value, args ) => {
+
+        //var vars = merge(args.childDetails, args.dates, args.earlyDates);
+       // var vars = serialize(args);
+        console.log(args.childDetails);
+        
+        var poster = axios({
+            method: 'get',
+            url: baseUrl + `/Camp/${args.campId}/Price/`,
+            params: {
+                'childDetails[]': args.childDetails,
+                'dates[]': args.dates
+            },
+            config: {
+                headers: {'Content-Type': 'application/x-www-form-urlencoded'
+                }
+            }
+    })
+    .then(res => res.data)
+    .catch(function (response) {
+        //handle error
+        console.log(response);
+    });
+
+    return poster;
+
+}
+},
+
+
 Site: {
     type: SiteType,
     args: {
@@ -674,7 +749,16 @@ Site: {
     },
 },
 
-
+SiteFromName: {
+    type: SiteType,
+    args: {
+        name: {type: GraphQLString}
+    },
+    resolve(parent, args) {
+        return axios.get(baseUrl + `/Site/${args.name}`)
+        .then(res => res.data);
+    },
+},
 
 SiteBookings: {
     type: BookingType,
