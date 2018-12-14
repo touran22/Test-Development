@@ -570,6 +570,27 @@ const TimeSlotType = new GraphQLObjectType({
     })
 });
 
+const TournamentType = new GraphQLObjectType({
+    name: 'TournamentType',
+    fields: () => ({
+        TournamentId: { type: GraphQLString },
+        TournamentCode: { type: GraphQLString },
+        TournamentName: { type: GraphQLString },
+        SponsorName: { type: GraphQLString },
+        RegistrationFee: { type: GraphQLString },
+        TournamentNotes: { type: GraphQLString },
+        SiteId: { type: GraphQLString },
+        ActivityTypeId: { type: GraphQLString },
+        DateCreated: { type: GraphQLString },
+        LastModified: { type: GraphQLString },
+        SiteName: { type: GraphQLString },
+        ActivityTypeName: { type: GraphQLString },
+        CurrencyCode: { type: GraphQLString },
+        CurrencySymbol: { type: GraphQLString },
+        TournamentDate: { type: GraphQLString }
+    })
+});
+
 
 const TransactionType = new GraphQLObjectType({
     name: 'TransactionType',
@@ -1336,7 +1357,7 @@ var MutationType = new GraphQLObjectType({
     return poster;
     }
     },
-        updateTeamPlayerProfile: {
+    updateTeamPlayerProfile: {
         type: MemberType,
         description: 'updateTeamPlayerProfile',
         args: {
@@ -1846,8 +1867,6 @@ SiteBookings: {
         StartTime: {type: GraphQLString},
         accountRef: {type: GraphQLString},
         memberNum: {type: GraphQLString}
-
-
     },
     resolve(parent, args) {
         return axios.get(baseUrl + `/Site/${args.SiteId}/Booking`)
@@ -1864,17 +1883,144 @@ Sites: {
 
 },
 
+SiteAvailableBubbleParties: {
+    type: new GraphQLList(TimeSlotType),
+    args: {
+        siteId: {type: GraphQLString},
+        alternative: {type: GraphQLString}
+    },
+    resolve: (value, args ) => {
 
-SiteTimeSlots: {
+        var poster = axios({
+            method: 'get',
+            url: baseUrl + `/Site/${args.siteId}/BubbleParty`,
+            params: {
+                alternative: args.alternative
+            },
+            config: {
+                headers: {'Content-Type': 'application/x-www-form-urlencoded'
+                }
+            }
+    })
+    .then(res => res.data)
+    .catch(function (response) {
+        //handle error
+        console.log(response);
+    });
+
+    return poster;
+}
+},
+
+SiteActiveCamps: {
+    type: new GraphQLList(CampType),
+    args: {
+        siteId: {type: GraphQLString},
+        alternative: {type: GraphQLString}
+    },
+    resolve: (value, args ) => {
+
+        var poster = axios({
+            method: 'get',
+            url: baseUrl + `/Site/${args.siteId}/Camps`,
+            params: {
+                alternative: args.alternative
+            },
+            config: {
+                headers: {'Content-Type': 'application/x-www-form-urlencoded'
+                }
+            }
+    })
+    .then(res => res.data)
+    .catch(function (response) {
+        //handle error
+        console.log(response);
+    });
+
+    return poster;
+}
+},
+
+SiteAvailableFunctionSlots: {
+    type: new GraphQLList(TimeSlotType),
+    args: {
+        siteId: {type: GraphQLString},
+        alternative: {type: GraphQLString}
+    },
+    resolve: (value, args ) => {
+
+        var poster = axios({
+            method: 'get',
+            url: baseUrl + `/Site/${args.siteId}/Function`,
+            params: {
+                alternative: args.alternative
+            },
+            config: {
+                headers: {'Content-Type': 'application/x-www-form-urlencoded'
+                }
+            }
+    })
+    .then(res => res.data)
+    .catch(function (response) {
+        //handle error
+        console.log(response);
+    });
+
+    return poster;
+}
+},
+
+SiteAvailablePartySlots: {
+    type: new GraphQLList(TimeSlotType),
+    args: {
+        siteId: {type: GraphQLString},
+        alternative: {type: GraphQLString}
+    },
+    resolve: (value, args ) => {
+
+        var poster = axios({
+            method: 'get',
+            url: baseUrl + `/Site/${args.siteId}/Party`,
+            params: {
+                alternative: args.alternative
+            },
+            config: {
+                headers: {'Content-Type': 'application/x-www-form-urlencoded'
+                }
+            }
+    })
+    .then(res => res.data)
+    .catch(function (response) {
+        //handle error
+        console.log(response);
+    });
+
+    return poster;
+}
+},
+
+SiteAvailableTimeSlots: {
     type: SiteType,
     args: {
         siteId: {type: GraphQLString}
     },
     resolve(parent, args) {
         return axios.get(baseUrl + `/Site/${args.siteId}/GetBookingSlots`)
+        .then(res => res.data);
+    }
+},
+
+SiteActiveTournaments: {
+    type: new GraphQLList(TournamentType),
+    args: {
+        siteId: {type: GraphQLString},
+        date: {type: GraphQLString}
+    },
+    resolve(parent, args) {
+        return axios.get(baseUrl + `/Site/${args.siteId}/Tournaments`)
             .then(res => res.data);
         }
-    },
+    },    
 
     Sites: {
         type: new GraphQLList(SiteType),
