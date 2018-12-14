@@ -116,6 +116,20 @@ const BookingType = new GraphQLObjectType({
     })
 });
 
+const BookingTypeType  = new GraphQLObjectType({
+    name: 'BookingTypeType',
+    fields: () => ({
+        BookingTypeId: { type: GraphQLString },
+        BookingTypeCode: { type: GraphQLString },
+        BookingTypeName: { type: GraphQLString },
+        BookingDuration: { type: GraphQLInt },
+        Selectable: { type: GraphQLBoolean },
+        LoyaltyOptions: { type: GraphQLBoolean },
+        DefaultBookingType: {type: GraphQLString},
+        AvailableOnline: {type: GraphQLBoolean}
+    })
+});
+
 const CampType = new GraphQLObjectType({
     name: 'CampType',
     fields: () => ({
@@ -183,6 +197,15 @@ const CampRegistrationDateType = new GraphQLObjectType({
     })
 });
 
+const ContactMethodType = new GraphQLObjectType({
+    name: 'ContactMethodType',
+    fields: () => ({
+        ContactMethodId: { type: GraphQLString },
+        ContactMethodCode: { type: GraphQLString },
+        ContactMethodName: { type: GraphQLString }
+    })
+});
+
 const ContactType = new GraphQLObjectType({
     name: 'ContactType',
     fields: () => ({
@@ -193,6 +216,15 @@ const ContactType = new GraphQLObjectType({
         DateCreated: { type: GraphQLString },
         LastModified: { type: GraphQLString },
         DisplayName: {type: OpeningTimeType}
+    })
+});
+
+const CountryType = new GraphQLObjectType({
+    name: 'CountryType',
+    fields: () => ({
+        CountryId: { type: GraphQLString },
+        CountryCode: { type: GraphQLString },
+        CountryName: { type: GraphQLString }
     })
 });
 
@@ -420,6 +452,19 @@ const OnlineUserType = new GraphQLObjectType({
     })
 });
 
+const PlayerType = new  GraphQLObjectType({
+    name: 'PlayerType',
+    fields: () => ({
+        FirstName: { type: GraphQLString },
+        LastName: { type: GraphQLString },
+        Email: { type: GraphQLString },
+        Active: { type: GraphQLBoolean },
+        Contact: { type: GraphQLBoolean },
+        AltContact: { type: GraphQLBoolean },
+        PlayerTeam: {type: new GraphQLList(TeamType)}
+    })
+});
+
 const PriceType = new  GraphQLObjectType({
     name: 'PriceType',
     fields: () => ({
@@ -460,6 +505,19 @@ const TableType = new  GraphQLObjectType({
         Points: { type: GraphQLString },
         PenaltyPoints: { type: GraphQLString },
         LastModified: { type: GraphQLString }
+    })
+});
+
+const TeamType = new GraphQLObjectType({
+    name: 'TeamType',
+    fields: () => ({
+        TeamName: { type: GraphQLString },
+        SponsorName: { type: GraphQLString },
+        TeamStatus: { type: GraphQLString },
+        ContactName: { type: GraphQLString },
+        AltContactName: { type: GraphQLString },
+        SiteId: { type: GraphQLString },
+        TeamPlayer: { type: new GraphQLList(PlayerType) }
     })
 });
 
@@ -609,6 +667,14 @@ const NewBookingPaymentInputType = new GraphQLInputObjectType({
         bookingId: { type: GraphQLString },
         amount: { type: GraphQLString },
         paymentRef: { type: GraphQLString }
+    })
+});
+
+const MemberContactDetailInputType = new GraphQLInputObjectType({
+    name: 'MemberContactDetailInputType',
+    fields: () => ({
+        ContactType: { type: GraphQLString},
+        ContactValue: { type: GraphQLString}
     })
 });
 
@@ -1103,14 +1169,15 @@ var MutationType = new GraphQLObjectType({
             type: MemberType,
             description: 'update member',
             args: {
-                member: { type: MemberInputType }
+                member: { type: MemberInputType },
+                onlineUserId: { type: GraphQLString }
             },
             resolve: (value, { payment }) => {
 
                 var poster = axios({
                     method: 'put',
                     params: args.member,
-                    url: baseUrl + `/Member/${args.member.onlineMemberId}`,
+                    url: baseUrl + `/Member/${args.onlineUserId}`,
                     config: {
                         headers: {'Content-Type': 'application/x-www-form-urlencoded'
                         }
@@ -1126,21 +1193,48 @@ var MutationType = new GraphQLObjectType({
         }
         }  
     }),
-    updateMemberPassword: {
+    deleteMemberContactDetail: {
         type: MemberType,
-        description: 'update member password',
+        description: 'updateMemberContactDetail',
         args: {
             onlineUserid: { type: GraphQLString },
-            password: { type: GraphQLString }
+            contactDetailId: { type: GraphQLString }
+        },
+        resolve: (value, { onlineUserid, password }) => {
+
+            var poster = axios({
+                method: 'delete',
+                url: baseUrl + `/Member/${args.onlineUserid}/ContactDetail/${args.contactDetailId}`,
+            config: {
+                headers: {'Content-Type': 'application/x-www-form-urlencoded'
+                }
+            }
+    })
+    .then(res => res.data)
+    .catch(function (response) {
+        //handle error
+        console.log(response);
+    });
+
+    return poster;
+    }
+    },
+    updateMemberContactDetail: {
+        type: MemberType,
+        description: 'updateMemberContactDetail',
+        args: {
+            onlineUserid: { type: GraphQLString },
+            ContactDetail: { type: MemberContactDetailInputType }
         },
         resolve: (value, { onlineUserid, password }) => {
 
             var poster = axios({
                 method: 'post',
                 params: {
-                    Password: args.password
+                    ContactType: args.ContactDetail.ContactType,
+                    ContactValue: args.ContactDetail.ContactDetail
                 },
-                url: baseUrl + `/Member/${args.member.onlineMemberId}/Password/Update`,
+                url: baseUrl + `/Member/${args.member.onlineMemberId}/ContactDetail`,
                 config: {
                     headers: {'Content-Type': 'application/x-www-form-urlencoded'
                     }
@@ -1153,6 +1247,125 @@ var MutationType = new GraphQLObjectType({
         });
 
         return poster;
+    }
+    },
+    updateMemberPassword: {
+        type: MemberType,
+        description: 'update member password',
+        args: {
+            onlineUserid: { type: GraphQLString },
+            password: { type: GraphQLString }
+        },
+        resolve: (value, { onlineUserid, password }) => {
+
+            var poster = axios({
+                method: 'put',
+                params: {
+                    Password: args.password
+                },
+                url: baseUrl + `/Member/${args.member.onlineUserid}/Password/Update`,
+                config: {
+                    headers: {'Content-Type': 'application/x-www-form-urlencoded'
+                    }
+                }
+        })
+        .then(res => res.data)
+        .catch(function (response) {
+            //handle error
+            console.log(response);
+        });
+
+        return poster;
+    }
+    },
+    removeTeamPlayerProfile: {
+        type: MemberType,
+        description: 'removeTeamPlayer',
+        args: {
+            teamId: { type: GraphQLString },
+            personId: { type: GraphQLString }
+        },
+        resolve: (value, { teamId, personId }) => {
+
+            var poster = axios({
+                method: 'delete',
+                url: baseUrl + `/Player/${args.teamId}/Person/${args.personId}`,
+            config: {
+                headers: {'Content-Type': 'application/x-www-form-urlencoded'
+                }
+            }
+    })
+    .then(res => res.data)
+    .catch(function (response) {
+        //handle error
+        console.log(response);
+    });
+
+    return poster;
+    }
+    },
+    createTeamPlayerProfile: {
+        type: MemberType,
+        description: 'createTeamPlayer',
+        args: {
+            teamId: { type: GraphQLString },
+            personId: { type: GraphQLString },
+            mainContact: { type: GraphQLString },
+            altContact: { type: GraphQLString }
+        },
+        resolve: (value, { teamId, personId, mainContact, altContact }) => {
+
+            var poster = axios({
+                method: 'post',
+                params: {
+                    MainContact: args.mainContact,
+                    AltContact: args.altContact
+                },
+                url: baseUrl + `/Player/${args.teamId}/Person/${args.personId}`,
+            config: {
+                headers: {'Content-Type': 'application/x-www-form-urlencoded'
+                }
+            }
+    })
+    .then(res => res.data)
+    .catch(function (response) {
+        //handle error
+        console.log(response);
+    });
+
+    return poster;
+    }
+    },
+        updateTeamPlayerProfile: {
+        type: MemberType,
+        description: 'updateTeamPlayerProfile',
+        args: {
+            teamId: { type: GraphQLString },
+            personId: { type: GraphQLString },
+            mainContact: { type: GraphQLString },
+            altContact: { type: GraphQLString }
+        },
+        resolve: (value, { teamId, personId, mainContact, altContact }) => {
+
+            var poster = axios({
+                method: 'post',
+                params: {
+                    MainContact: args.mainContact,
+                    AltContact: args.altContact
+                },
+                url: baseUrl + `/Player/${args.teamId}/Person/${args.personId}/Update`,
+            config: {
+                headers: {'Content-Type': 'application/x-www-form-urlencoded'
+                }
+            }
+    })
+    .then(res => res.data)
+    .catch(function (response) {
+        //handle error
+        console.log(response);
+    });
+
+    return poster;
     }
     }
 });
@@ -1195,6 +1408,14 @@ Booking: {
         .then(res => res.data);
     },
 
+},
+
+BookingTypes: {
+    type: new GraphQLList(BookingTypeType),
+    resolve(parent, args) {
+        return axios.get(baseUrl + `/Params/BookingTypes`)
+        .then(res => res.data);
+    }, 
 },
 
 BubbleParty: {
@@ -1275,6 +1496,22 @@ CampPrice: {
 }          
 },
 
+ContactMethods: {
+    type: new GraphQLList(ContactMethodType),
+    resolve(parent, args) {
+        return axios.get(baseUrl + `/Params/ContactMethods`)
+        .then(res => res.data);
+    },
+},
+
+Countries: {
+    type: new GraphQLList(CountryType),
+    resolve(parent, args) {
+        return axios.get(baseUrl + `/Params/Countries`)
+        .then(res => res.data);
+    },
+},
+
 FixtureGoalScorers: {
     type: GameType,
     args: {
@@ -1330,7 +1567,7 @@ KidsPartySlotsAvailable: {
 } 
 },
 
-KidsPartyTimeSlotPrice: {
+KidsPartyPrice: {
     type: new GraphQLList(ItemType),
     args: {
         timeSlotId: {type: GraphQLString},
@@ -1502,16 +1739,77 @@ MemberByAccountRef: {
     },
 },
 
-
-
-
-Site: {
-    type: SiteType,
+PartyExtras: {
+    type: new GraphQLList(ItemType),
     args: {
-        siteId: {type: GraphQLString}
+        timeSlotId: {type: GraphQLString},
+        numGuests: {type: GraphQLInt}
+    },
+    resolve: (value, args ) => {
+
+        var poster = axios({
+            method: 'get',
+            url: baseUrl + `/Party/${args.timeSlotId}/Extras`,
+            params: {
+                numGuests: args.numGuests
+            },
+            config: {
+                headers: {'Content-Type': 'application/x-www-form-urlencoded'
+                }
+            }
+    })
+    .then(res => res.data)
+    .catch(function (response) {
+        //handle error
+        console.log(response);
+    });
+
+    return poster;
+
+} 
+},
+
+PartyPrice: {
+    type:  PriceType,
+    args: {
+        timeSlotId: {type: GraphQLString},
+        numGuests: {type: GraphQLInt},
+        itemId: {type: GraphQLString}
+    },
+    resolve: (value, args ) => {
+
+        var poster = axios({
+            method: 'get',
+            url: baseUrl + `/Party/${args.timeSlotId}/Price`,
+            params: {
+                numGuests: args.numGuests,
+                'itemId[]': args.numGuests,
+            },
+            config: {
+                headers: {'Content-Type': 'application/x-www-form-urlencoded'
+                }
+            }
+    })
+    .then(res => res.data)
+    .catch(function (response) {
+        //handle error
+        console.log(response);
+    });
+
+    return poster;
+} 
+},
+
+
+
+
+PlayerTeams: {
+    type: PlayerType,
+    args: {
+        personId: {type: GraphQLString}
     },
     resolve(parent, args) {
-        return axios.get(baseUrl + `/Site/${args.siteId}`)
+        return axios.get(baseUrl + `/Player/${args.personId}/Teams`)
         .then(res => res.data);
     },
 },
@@ -1582,6 +1880,31 @@ SiteTimeSlots: {
         type: new GraphQLList(SiteType),
         resolve(parent) {
             return axios.get(baseUrl + '/Site')
+            .then(res => res.data);
+        },
+
+    },
+
+    Team: {
+        type: TeamType,
+        args: {
+            teamId: {type: GraphQLString}
+        },
+        resolve(parent, args) {
+            return axios.get(baseUrl + `/Player/${args.teamId}`)
+            .then(res => res.data);
+        },
+
+    },
+
+    TeamPlayer: {
+        type: TeamType,
+        args: {
+            teamId: {type: GraphQLString},
+            personId: {type: GraphQLString}
+        },
+        resolve(parent, args) {
+            return axios.get(baseUrl + `/Player/${args.teamId}/Person/${args.personId}`)
             .then(res => res.data);
         },
 
