@@ -427,6 +427,14 @@ const MemberType = new GraphQLObjectType({
     })
 });
 
+const NearbyType = new GraphQLObjectType({
+    name: 'NearbyType',
+    fields: () => ({
+        SiteId: { type: GraphQLString },
+        ActivityId: { type: GraphQLString }
+    })
+}); 
+
 
 const OpeningTimeType = new GraphQLObjectType({
     name: 'OpeningTimeType',
@@ -654,6 +662,54 @@ const TournamentType = new GraphQLObjectType({
         TournamentDate: { type: GraphQLString }
     })
 });
+
+const TournamentTeamsType = new GraphQLObjectType({
+    name: 'TournamentTeamsType',
+    fields: () => ({
+        TournamentId: { type: GraphQLString },
+        TournamentCode: { type: GraphQLString },
+        TournamentName: { type: GraphQLString },
+        SponsorName: { type: GraphQLString },
+        RegistrationFee: { type: GraphQLString },
+        TournamentNotes: { type: GraphQLString },
+        SiteId: { type: GraphQLString },
+        ActivityTypeId: { type: GraphQLString },
+        DateCreated: { type: GraphQLString },
+        LastModified: { type: GraphQLString },
+        SiteName: { type: GraphQLString },
+        ActivityTypeName: { type: GraphQLString },
+        CurrencyCode: { type: GraphQLString },
+        CurrencySymbol: { type: GraphQLString },
+        TournamentDate: { type: GraphQLString },
+        Teams: {type: new GraphQLList (TournamentTeamType)}
+    })
+});
+
+const TournamentTeamType = new GraphQLObjectType({
+    name: 'TournamentTeamType',
+    fields: () => ({
+        TournamentId: { type: GraphQLString }, 
+        TeamId: { type: GraphQLString },
+        Seed: {type: GraphQLInt },
+        TeamName: { type: GraphQLString },
+        SLTransactionId: { type: GraphQLString },
+        ReplacedByTeamId: { type: GraphQLString },
+        ReplacementDate: { type: GraphQLString },
+        OnlineRegistration: { type: GraphQLBoolean },
+        MemberNum: { type: GraphQLString },
+        FirstName: { type: GraphQLString },
+        LastName: { type: GraphQLString },
+        Email: { type: GraphQLString },
+        Telephone: { type: GraphQLString },
+        PersonId: { type: GraphQLString },
+        GoodsTotal: { type: GraphQLFloat },
+        VatTotal: { type: GraphQLFloat },
+        Payment: { type: GraphQLFloat },
+        Balance: { type: GraphQLFloat }
+        
+    })
+});
+        
 
 
 const TransactionType = new GraphQLObjectType({
@@ -1490,7 +1546,43 @@ var MutationType = new GraphQLObjectType({
 
     return poster;
     }
+    },
+    
+        registerTeamInTournament: {
+        type: TournamentType,
+        description: 'registerTeamInTournament',
+        args: {
+            tournamentId: { type: GraphQLString },
+            accountRef: { type: GraphQLString },
+            memberNum: { type: GraphQLString },
+            teamName: { type: GraphQLString }
+        },
+        resolve: (value, { tournamentId, accountRef, memberNum, teamName }) => {
+
+            var poster = axios({
+                method: 'post',
+                params: {
+                    accountRef: args.accountRef,
+                    memberNum: args.memberNum,
+                    teamName: args.teamName
+                },
+                url: baseUrl + `/Tournament/${args.tournamentId}/Register`,
+            config: {
+                headers: {'Content-Type': 'application/x-www-form-urlencoded'
+                }
+            }
+    })
+    .then(res => res.data)
+    .catch(function (response) {
+        //handle error
+        console.log(response);
+    });
+
+    return poster;
     }
+    }
+    
+    
 });
 
 
@@ -2359,7 +2451,30 @@ TeamTables: {
             .then(res => res.data);
         },
 
+    },
+    
+    TimeSlotNearby: {
+    type: new GraphQLList(NearbyType),
+    args: {
+        timeSlotId: {type: GraphQLString}
+    },
+    resolve(parent, args) {
+        return axios.get(baseUrl + `/TimeSlot/${args.timeSlotId}/Nearby`)
+            .then(res => res.data);
+        },
+    },
+        
+    Tournament: {
+    type: TournamentTeamsType,
+    args: {
+        tournamentId: {type: GraphQLString}
+    },
+    resolve(parent, args) {
+        return axios.get(baseUrl + `/Tournament/${args.tournamentId}`)
+            .then(res => res.data);
+        },
     }
+     
 
 
     }
