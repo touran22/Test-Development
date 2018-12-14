@@ -334,6 +334,15 @@ const GameType = new GraphQLObjectType({
     })
 });
 
+const SiteGoalsType = new GraphQLObjectType({
+    name: 'SiteGoalsType',
+    fields: () => ({
+        SiteId: { type: GraphQLString},
+        GoalsInLast30Days: { type: GraphQLString}
+
+    })
+});
+
 const ItemType = new GraphQLObjectType({
     name: 'ItemType',
     fields: () => ({
@@ -488,6 +497,39 @@ const SiteType = new GraphQLObjectType({
     })
 });
 
+const StatisticType = new GraphQLObjectType({
+    name: 'StatisticType',
+    fields: () => ({
+        Season: { type: GraphQLString },
+        GamesPlayed: { type: GraphQLInt },
+        Wins: { type: GraphQLInt },
+        Losses: { type: GraphQLInt },
+        Draws: { type: GraphQLInt },
+        Points: { type: GraphQLInt },
+        PenaltyPoints: { type: GraphQLInt },
+        GoalsFor: { type: GraphQLInt },
+        GoalsAgainst: { type: GraphQLInt },
+        GoalDifference: { type: GraphQLInt },
+        AverageFor: { type: GraphQLInt },
+        MostScored: { type: GraphQLInt },
+        MostConceeded: { type: GraphQLInt },
+        BiggestWin: { type: GraphQLString },
+        BiggestLoss: { type: GraphQLString },
+        WinStreak: { type: GraphQLInt },
+        LoseStreak: { type: GraphQLInt }
+    })
+});
+
+const StatsType = new GraphQLObjectType({
+    name: 'StatsType',
+    fields: () => ({
+        TeamId: { type: GraphQLString },
+        TeamName: { type: GraphQLString },
+        CurrentForm: { type: GraphQLString },
+        Stats: { type: new GraphQLList(StatisticType) }
+    })
+});
+
 const TableType = new  GraphQLObjectType({
     name: 'TableType',
     fields: () => ({
@@ -508,15 +550,37 @@ const TableType = new  GraphQLObjectType({
     })
 });
 
+const TeamTablesType = new GraphQLObjectType({
+    name: 'TeamTablesType',
+    fields: () => ({
+        SiteId: { type: GraphQLString },
+        SiteName: { type: GraphQLString },
+        LeagueId: { type: GraphQLString },
+        LeagueName: { type: GraphQLString },
+        LeagueStatus: { type: GraphQLString },
+        StartDate: { type: GraphQLString },
+        Divisions: { type: new GraphQLList(DivisionType) },
+
+    })
+});
+
 const TeamType = new GraphQLObjectType({
     name: 'TeamType',
     fields: () => ({
+        TeamId: { type: GraphQLString },
         TeamName: { type: GraphQLString },
         SponsorName: { type: GraphQLString },
         TeamStatus: { type: GraphQLString },
+        MembersConfirmationReqSent: { type: GraphQLString },
+        NumPlayers: { type: GraphQLInt },
+        ContactId: { type: GraphQLString },
+        AltContactId: { type: GraphQLString },
         ContactName: { type: GraphQLString },
         AltContactName: { type: GraphQLString },
         SiteId: { type: GraphQLString },
+        DateCreated: { type: GraphQLString },
+        LastModified: { type: GraphQLString },
+        IsVacancy: { type: GraphQLBoolean },
         TeamPlayer: { type: new GraphQLList(PlayerType) }
     })
 });
@@ -810,6 +874,44 @@ var MutationType = new GraphQLObjectType({
                     method: 'get',
                     url: baseUrl + `/Authenticate/${args.credentials.userId}`,
                     data: serialize(credentials.password),
+                    config: {
+                        headers: {'Content-Type': 'application/x-www-form-urlencoded'
+                        }
+                    }
+            })
+            .then(res => res.data)
+            .catch(function (response) {
+                //handle error
+                console.log(response);
+            });
+
+            return poster;
+        }
+        },
+
+        createBooking: {
+            type: BookingType,
+            description: 'Create a booking',
+            args: {
+                siteId: { type: GraphQLString },
+                actvityId: { type: GraphQLString },
+                bookingDate: { type: GraphQLString },
+                startTime: { type: GraphQLString },
+                accountRef: { type: GraphQLString },
+                memberNum: { type: GraphQLString }
+            },
+            resolve: (value, { account, accountRef }) => {
+
+                var poster = axios({
+                    method: 'post',
+                    params: {
+                        activityId: args.activityId,
+                        bookingDate: args.bookingDate,
+                        startTime: args.startTime,
+                        accountRef: args.accountRef,
+                        memberNum: args.memberNum
+                    },
+                    url: baseUrl + `/Site/${args.siteId}/Booking`,
                     config: {
                         headers: {'Content-Type': 'application/x-www-form-urlencoded'
                         }
@@ -1874,6 +1976,103 @@ SiteBookings: {
     },
 
 },
+
+SiteLast30DaysGoals: {
+    type: SiteGoalsType,
+    args: {
+        siteId: {type: GraphQLString}
+    },
+    resolve(parent, args) {
+        return axios.get(baseUrl + `/Site/${args.siteId}/GoalsInLast30Days`)
+        .then(res => res.data);
+    },
+
+},
+
+SiteLeagues: {
+    type: new GraphQLList(LeagueType),
+    args: {
+        siteId: {type: GraphQLString},
+        date: {type: GraphQLString},
+        leagueName: {type: GraphQLString},
+        teamName: {type: GraphQLString},
+    },
+    resolve: (value, args ) => {
+
+        var poster = axios({
+            method: 'get',
+            url: baseUrl + `/Site/${args.siteId}/League`,
+            params: {
+                alternative: args.alternative
+            },
+            config: {
+                headers: {'Content-Type': 'application/x-www-form-urlencoded'
+                }
+            }
+    })
+    .then(res => res.data)
+    .catch(function (response) {
+        //handle error
+        console.log(response);
+    });
+
+    return poster;
+}
+},
+
+SiteTeams: {
+    type: new GraphQLList(TeamType),
+    args: {
+        siteId: {type: GraphQLString},
+        teamName: {type: GraphQLString},
+    },
+    resolve: (value, args ) => {
+
+        var poster = axios({
+            method: 'get',
+            url: baseUrl + `/Site/${args.siteId}/Team`,
+            params: {
+                teamName: args.teamName
+            },
+            config: {
+                headers: {'Content-Type': 'application/x-www-form-urlencoded'
+                }
+            }
+    })
+    .then(res => res.data)
+    .catch(function (response) {
+        //handle error
+        console.log(response);
+    });
+
+    return poster;
+}
+},
+
+SiteTopTeams: {
+    type: new GraphQLList(TeamType),
+    args: {
+        siteId: {type: GraphQLString}
+    },
+    resolve: (value, args ) => {
+        var poster = axios({
+            method: 'get',
+            url: baseUrl + `/Site/${args.siteId}/TopTeams`,
+            config: {
+                headers: {'Content-Type': 'application/x-www-form-urlencoded'
+                }
+            }
+    })
+    .then(res => res.data)
+    .catch(function (response) {
+        //handle error
+        console.log(response);
+    });
+
+    return poster;
+}
+},
+
 Sites: {
     type: new GraphQLList(SiteType),
     resolve(parent) {
@@ -2018,29 +2217,135 @@ SiteActiveTournaments: {
     },
     resolve(parent, args) {
         return axios.get(baseUrl + `/Site/${args.siteId}/Tournaments`)
-            .then(res => res.data);
-        }
-    },    
+        .then(res => res.data);
+    }
+},    
 
-    Sites: {
-        type: new GraphQLList(SiteType),
-        resolve(parent) {
-            return axios.get(baseUrl + '/Site')
-            .then(res => res.data);
-        },
-
+Sites: {
+    type: new GraphQLList(SiteType),
+    resolve(parent) {
+        return axios.get(baseUrl + '/Site')
+        .then(res => res.data);
     },
 
-    Team: {
-        type: TeamType,
-        args: {
-            teamId: {type: GraphQLString}
-        },
-        resolve(parent, args) {
-            return axios.get(baseUrl + `/Player/${args.teamId}`)
+},
+
+Team: {
+    type: TeamType,
+    args: {
+        teamId: {type: GraphQLString}
+    },
+    resolve(parent, args) {
+        return axios.get(baseUrl + `/Team/${args.teamId}`)
+        .then(res => res.data);
+    },
+
+},
+
+TeamFixtures: {
+    type: new GraphQLList(FixtureType),
+    args: {
+        teamId: {type: GraphQLString},
+        date: {type: GraphQLString}
+    },
+    resolve: (value, args ) => {
+
+        var poster = axios({
+            method: 'get',
+            url: baseUrl + `/Team/${args.teamId}/Fixtures`,
+            params: {
+                date: args.date
+            },
+            config: {
+                headers: {'Content-Type': 'application/x-www-form-urlencoded'
+                }
+            }
+    })
+    .then(res => res.data)
+    .catch(function (response) {
+        //handle error
+        console.log(response);
+    });
+
+    return poster;
+}
+
+},
+
+TeamPlayers: {
+    type: TeamType,
+    args: {
+        teamId: {type: GraphQLString}
+    },
+    resolve(parent, args) {
+        return axios.get(baseUrl + `/Player/${args.teamId}`)
+        .then(res => res.data);
+    },
+
+},
+
+TeamResults: {
+    type: new GraphQLList(GameType),
+    args: {
+        teamId: {type: GraphQLString}
+    },
+    resolve: (value, args ) => {
+
+        var poster = axios({
+            method: 'get',
+            url: baseUrl + `/Team/${args.teamId}/Results`,
+            config: {
+                headers: {'Content-Type': 'application/x-www-form-urlencoded'
+                }
+            }
+    })
+    .then(res => res.data)
+    .catch(function (response) {
+        //handle error
+        console.log(response);
+    });
+
+    return poster;
+}
+
+},
+
+TeamStats: {
+    type: StatsType,
+    args: {
+        teamId: {type: GraphQLString}
+    },
+    resolve: (value, args ) => {
+
+        var poster = axios({
+            method: 'get',
+            url: baseUrl + `/Team/${args.teamId}/Stats`,
+            config: {
+                headers: {'Content-Type': 'application/x-www-form-urlencoded'
+                }
+            }
+    })
+    .then(res => res.data)
+    .catch(function (response) {
+        //handle error
+        console.log(response);
+    });
+
+    return poster;
+}
+
+},
+
+
+TeamTables: {
+    type: new GraphQLList(TeamTablesType),
+    args: {
+        teamId: {type: GraphQLString}
+    },
+    resolve(parent, args) {
+        return axios.get(baseUrl + `/Team/${args.teamId}/Tables`)
             .then(res => res.data);
         },
-
     },
 
     TeamPlayer: {
@@ -2055,6 +2360,7 @@ SiteActiveTournaments: {
         },
 
     }
+
 
     }
 });
